@@ -1,3 +1,8 @@
+## 0.8.1
+
+- Updated dependencies (instant -> webtime, paste -> pasty) (#75)
+- Improved compile times by introducing the `segment-codegen` feature (#86)
+
 ## 0.8.0
 
 - Composition feature: added the `ascent_source!` macro and the `include_source!` syntax (thanks to @JoranHonig

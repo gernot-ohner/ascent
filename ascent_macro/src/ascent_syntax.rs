@@ -1,7 +1,7 @@
 #![deny(warnings)]
 extern crate proc_macro;
 use std::collections::{HashMap, HashSet};
-use std::sync::Mutex;
+use std::sync::{LazyLock, Mutex};
 
 use ascent_base::util::update;
 use derive_syn_parse::Parse;
@@ -1133,9 +1133,8 @@ pub(crate) fn desugar_ascent_program(mut prog: AscentProgram) -> Result<AscentPr
    Ok(prog)
 }
 
-lazy_static::lazy_static! {
-   static ref IDENT_COUNTERS: Mutex<HashMap<String, u32>> = Mutex::new(HashMap::default());
-}
+static IDENT_COUNTERS: LazyLock<Mutex<HashMap<String, u32>>> = LazyLock::new(Mutex::default);
+
 fn fresh_ident(prefix: &str, span: Span) -> Ident {
    let mut ident_counters_lock = IDENT_COUNTERS.lock().unwrap();
    let counter = if let Some(entry) = ident_counters_lock.get_mut(prefix) {

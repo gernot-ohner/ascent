@@ -4,9 +4,16 @@ exclude = ["ascent_tests", "wasm-tests"]
 resolver = "2"
 
 [workspace.package]
-version = "0.8.0"
+version = "0.8.1"
 
 [workspace.dependencies]
-ascent = { path = "./ascent", default-features = false, version = "0.8.0" }
-ascent_macro = { path = "./ascent_macro", version = "0.8.0" }
-ascent_base = { path = "./ascent_base", version = "0.8.0" }
+ascent = { path = "./ascent", default-features = false, version = "0.8.1" }
+ascent_macro = { path = "./ascent_macro", version = "0.8.1" }
+ascent_base = { path = "./ascent_base", version = "0.8.1" }
+
+itertools = "0.15"
+syn = "2.0.57"
+derive-syn-parse = "0.2.0"
+quote = "1.0"
+pastey = "0.2"
+hashbrown = { version = "0.14" }
