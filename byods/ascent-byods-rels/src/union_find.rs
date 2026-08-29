@@ -118,7 +118,7 @@ impl<T: Clone + Hash + Eq> EqRel<T> {
       }
    }
 
-   pub fn set_of(&self, x: &T) -> Option<HashSetIter<T>> {
+   pub fn set_of(&self, x: &T) -> Option<HashSetIter<'_, T>> {
       let set = self.elem_set(x)?;
       let res = Some(self.sets[set].iter());
       res

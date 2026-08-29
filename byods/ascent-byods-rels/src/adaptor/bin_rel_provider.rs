@@ -40,6 +40,7 @@ macro_rules! bin_rel_provider_rel_codegen {
 }
 pub use bin_rel_provider_rel_codegen as rel_codegen;
 
+#[cfg(test)]
 pub(crate) mod test {
    use std::iter::Once;
    use std::marker::PhantomData;
@@ -59,6 +60,7 @@ pub(crate) mod test {
 
    pub use super::{rel, rel_codegen, rel_full_ind, rel_ind};
 
+   #[allow(dead_code)] // looks like a false positive 
    pub struct DummyRel<T0, T1>(PhantomData<(T0, T1)>);
 
    impl<T0, T1> Default for DummyRel<T0, T1> {

@@ -135,7 +135,7 @@ pub mod elems {
 
    impl<T: PartialEq> Elems<T> {
       /// SAFETY: The ID must already exist in the union-find.
-      pub(super) unsafe fn find(&self, id: Id) -> FindResult<T> {
+      pub(super) unsafe fn find(&self, id: Id) -> FindResult<'_, T> {
          debug_assert!(self.has(id));
          let elem = unsafe { self.get_unchecked(id) };
          let parent_id = elem.parent.get();
@@ -405,7 +405,7 @@ impl<T: Clone + Hash + Eq> UnionFind<T> {
 
    pub fn find_item(&self, item: &T) -> Option<Id> { self.find_item_internal(item).map(|r| r.id) }
 
-   fn find_item_internal(&self, item: &T) -> Option<FindResult<T>> {
+   fn find_item_internal(&self, item: &T) -> Option<FindResult<'_, T>> {
       match self.items.get(item) {
          None => None,
          Some(id_cell) => {
@@ -445,7 +445,7 @@ impl<T: Clone + Hash + Eq> UnionFind<T> {
    }
 
    /// SAFETY: IDs must already exist in the union-find.
-   unsafe fn union_internal(&self, x: Id, y: Id) -> FindResult<T> {
+   unsafe fn union_internal(&self, x: Id, y: Id) -> FindResult<'_, T> {
       debug_assert!(self.elems.has(x));
       debug_assert!(self.elems.has(y));
 

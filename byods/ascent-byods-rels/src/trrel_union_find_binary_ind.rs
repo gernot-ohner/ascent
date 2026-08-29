@@ -40,21 +40,21 @@ impl<T: Clone + Hash + Eq> Default for TrRelDelta<T> {
 }
 
 impl<T: Clone + Hash + Eq> TrRelDelta<T> {
-   fn ind_0_get(&self, x: &T) -> Option<IteratorFromDyn<&'_ T>> {
+   fn ind_0_get(&self, x: &T) -> Option<IteratorFromDyn<'_, &'_ T>> {
       let x_set = self.total.elem_set(x)?;
       let sets_of_x = self.set_connections.get(&x_set)?;
 
       let res = || sets_of_x.iter().flat_map(|&s| self.total.sets[s].iter());
       Some(IteratorFromDyn::new(res))
    }
-   fn ind_1_get(&self, x: &T) -> Option<IteratorFromDyn<&'_ T>> {
+   fn ind_1_get(&self, x: &T) -> Option<IteratorFromDyn<'_, &'_ T>> {
       let x_set = self.total.elem_set(x)?;
       let sets_of_x = self.rev_set_connections.get(&x_set)?;
 
       let res = || sets_of_x.iter().flat_map(|&s| self.total.sets[s].iter());
       Some(IteratorFromDyn::new(res))
    }
-   fn ind_0_iter_all(&self) -> IteratorFromDyn<(&T, IteratorFromDyn<&T>)> {
+   fn ind_0_iter_all(&self) -> IteratorFromDyn<'_, (&T, IteratorFromDyn<'_, &T>)> {
       let res = || {
          self.set_connections.iter().flat_map(|(set_id, set_connections)| {
             let xs = &self.total.sets[*set_id];
@@ -66,7 +66,7 @@ impl<T: Clone + Hash + Eq> TrRelDelta<T> {
       };
       IteratorFromDyn::new(res)
    }
-   fn ind_1_iter_all(&self) -> IteratorFromDyn<(&T, IteratorFromDyn<&T>)> {
+   fn ind_1_iter_all(&self) -> IteratorFromDyn<'_, (&T, IteratorFromDyn<'_, &T>)> {
       let res = || {
          self.rev_set_connections.iter().flat_map(|(set_id, rev_set_connections)| {
             let xs = &self.total.sets[*set_id];
