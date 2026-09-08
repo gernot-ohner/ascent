@@ -1,0 +1,13 @@
+error: negation is not supported by `ascent_provenance!`
+ --> tests/ui/provenance/negation.rs:8:28
+  |
+8 |    output(x) <-- input(x), !excluded(x);
+  |                            ^
+
+warning: unused import: `HowProvenance`
+ --> tests/ui/provenance/negation.rs:1:14
+  |
+1 | use ascent::{HowProvenance, ascent_provenance};
+  |              ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default

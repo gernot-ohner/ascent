@@ -28,6 +28,7 @@ pub(crate) struct AscentMir {
    pub signatures: Signatures,
    pub config: AscentConfig,
    pub is_parallel: bool,
+   pub provenance_type: Option<Type>,
 }
 
 pub(crate) struct MirScc {
@@ -64,8 +65,9 @@ pub(crate) fn mir_rule_summary(rule: &MirRule) -> String {
    fn bitem_to_str(bitem: &MirBodyItem) -> String {
       match bitem {
          MirBodyItem::Clause(bcl) => format!("{}_{}", bcl.rel.ir_name, bcl.rel.version.to_string()),
-         MirBodyItem::Generator(gen) =>
-            format!("for_{}", pat_to_ident(&gen.pattern).map(|x| x.to_string()).unwrap_or_default()),
+         MirBodyItem::Generator(gen) => {
+            format!("for_{}", pat_to_ident(&gen.pattern).map(|x| x.to_string()).unwrap_or_default())
+         },
          MirBodyItem::Cond(CondClause::If(..)) => format!("if ⋯"),
          MirBodyItem::Cond(CondClause::IfLet(..)) => format!("if let ⋯"),
          MirBodyItem::Cond(CondClause::Let(..)) => format!("let ⋯"),
@@ -286,7 +288,7 @@ pub(crate) fn compile_hir_to_mir(hir: &AscentIr) -> syn::Result<AscentMir> {
                   return Err(syn::Error::new(
                      agg.span,
                      format!("use of aggregated relation `{}` cannot be stratified", &agg.rel.relation.name),
-                  ));
+                  ))
                }
             }
          }
@@ -316,6 +318,7 @@ pub(crate) fn compile_hir_to_mir(hir: &AscentIr) -> syn::Result<AscentMir> {
       signatures: hir.signatures.clone(),
       config: hir.config.clone(),
       is_parallel: hir.is_parallel,
+      provenance_type: hir.provenance_type.clone(),
    })
 }
 

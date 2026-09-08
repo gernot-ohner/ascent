@@ -67,9 +67,7 @@ impl Signatures {
    }
 
    pub fn split_impl_generics_for_impl(&self) -> (ImplGenerics<'_>, TypeGenerics<'_>, Option<&'_ WhereClause>) {
-      let Some(signature) = &self.implementation else {
-         return self.split_ty_generics_for_impl();
-      };
+      let Some(signature) = &self.implementation else { return self.split_ty_generics_for_impl() };
 
       let (impl_generics, _, _) = signature.impl_generics.split_for_impl();
       let (_, ty_generics, where_clause) = signature.generics.split_for_impl();
@@ -125,17 +123,31 @@ pub struct RelationNode {
    pub field_types: Punctuated<Type, Token![,]>,
    pub initialization: Option<Expr>,
    pub _semi_colon: Token![;],
-   pub is_lattice: bool,
+   pub kind: RelationKind,
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
+pub(crate) enum RelationKind {
+   Relation,
+   Lattice,
+   Provenance,
+}
+
+impl RelationKind {
+   pub fn is_lattice(self) -> bool { self == Self::Lattice }
+
+   pub fn is_provenance(self) -> bool { self == Self::Provenance }
 }
 
 impl Parse for RelationNode {
    fn parse(input: ParseStream) -> Result<Self> {
-      let is_lattice = input.peek(kw::lattice);
-      if is_lattice {
+      let kind = if input.peek(kw::lattice) {
          input.parse::<kw::lattice>()?;
+         RelationKind::Lattice
       } else {
          input.parse::<kw::relation>()?;
-      }
+         RelationKind::Relation
+      };
       let name: Ident = input.parse()?;
       let content;
       parenthesized!(content in input);
@@ -148,10 +160,10 @@ impl Parse for RelationNode {
       };
 
       let _semi_colon = input.parse::<Token![;]>()?;
-      if is_lattice && field_types.empty_or_trailing() {
-         return Err(input.error("empty lattice is not allowed"));
+      if kind.is_lattice() && field_types.empty_or_trailing() {
+         return Err(input.error("empty lattice is not allowed"))
       }
-      Ok(RelationNode { attrs: vec![], name, field_types, _semi_colon, is_lattice, initialization })
+      Ok(RelationNode { attrs: vec![], name, field_types, _semi_colon, kind, initialization })
    }
 }
 
@@ -496,8 +508,9 @@ impl Parse for RuleNode {
 pub(crate) fn rule_node_summary(rule: &RuleNode) -> String {
    fn bitem_to_str(bitem: &BodyItemNode) -> String {
       match bitem {
-         BodyItemNode::Generator(gen) =>
-            format!("for_{}", pat_to_ident(&gen.pattern).map(|x| x.to_string()).unwrap_or_default()),
+         BodyItemNode::Generator(gen) => {
+            format!("for_{}", pat_to_ident(&gen.pattern).map(|x| x.to_string()).unwrap_or_default())
+         },
          BodyItemNode::Clause(bcl) => format!("{}", bcl.rel),
          BodyItemNode::Disjunction(_) => todo!(),
          BodyItemNode::Cond(_cl) => format!("if_"),
@@ -570,6 +583,7 @@ pub(crate) struct AscentProgram {
    pub signatures: Option<Signatures>,
    pub attributes: Vec<syn::Attribute>,
    pub macros: Vec<MacroDefNode>,
+   pub provenance_type: Option<Type>,
 }
 
 /// The output that should be emitted when an `include_source!()` is encountered
@@ -617,12 +631,12 @@ pub(crate) fn parse_ascent_program(
          relations.push(relation_node);
       } else if input.peek(Token![macro]) {
          if !attrs.is_empty() {
-            return Err(Error::new(attrs[0].span(), "unexpected attribute(s)"));
+            return Err(Error::new(attrs[0].span(), "unexpected attribute(s)"))
          }
          macros.push(MacroDefNode::parse(input)?);
       } else if input.peek(kw::include_source) {
          if !attrs.is_empty() {
-            return Err(Error::new(attrs[0].span(), "unexpected attribute(s)"));
+            return Err(Error::new(attrs[0].span(), "unexpected attribute(s)"))
          }
          let before_tokens = input_clone
             .token_stream()
@@ -633,15 +647,15 @@ pub(crate) fn parse_ascent_program(
          let after_tokens: TokenStream = input.parse()?;
          let include_source_macro_call =
             IncludeSourceMacroCall { include_node, before_tokens, after_tokens, ascent_macro_name };
-         return Ok(Either::Right(include_source_macro_call));
+         return Ok(Either::Right(include_source_macro_call))
       } else {
          if !attrs.is_empty() {
-            return Err(Error::new(attrs[0].span(), "unexpected attribute(s)"));
+            return Err(Error::new(attrs[0].span(), "unexpected attribute(s)"))
          }
          rules.push(RuleNode::parse(input)?);
       }
    }
-   Ok(Either::Left(AscentProgram { rules, relations, signatures, attributes, macros }))
+   Ok(Either::Left(AscentProgram { rules, relations, signatures, attributes, macros, provenance_type: None }))
 }
 
 impl Parse for AscentProgram {
@@ -658,7 +672,7 @@ impl Parse for AscentProgram {
 pub(crate) struct RelationIdentity {
    pub name: Ident,
    pub field_types: Vec<Type>,
-   pub is_lattice: bool,
+   pub kind: RelationKind,
 }
 
 impl From<&RelationNode> for RelationIdentity {
@@ -666,7 +680,7 @@ impl From<&RelationNode> for RelationIdentity {
       RelationIdentity {
          name: relation_node.name.clone(),
          field_types: relation_node.field_types.iter().cloned().collect(),
-         is_lattice: relation_node.is_lattice,
+         kind: relation_node.kind,
       }
    }
 }
@@ -1008,7 +1022,7 @@ fn invoke_macro(invocation: &ExprMacro, definition: &MacroDefNode) -> Result<Tok
 
       for pair in definition.params.pairs() {
          if args.is_empty() {
-            return Err(Error::new(span, "expected more arguments"));
+            return Err(Error::new(span, "expected more arguments"))
          }
          let (param, comma) = pair.into_tuple();
          let arg = match param.kind {
@@ -1019,7 +1033,7 @@ fn invoke_macro(invocation: &ExprMacro, definition: &MacroDefNode) -> Result<Tok
          ident_replacement.insert(param.name.clone(), arg);
          if comma.is_some() {
             if args.is_empty() {
-               return Err(Error::new(span, "expected more arguments"));
+               return Err(Error::new(span, "expected more arguments"))
             }
             args.parse::<Token![,]>()?;
          }
@@ -1116,10 +1130,72 @@ fn rule_expand_macro_invocations(rule: RuleNode, macros: &HashMap<Ident, &MacroD
    Ok(RuleNode { body_items: new_body_items, head_clauses: new_head_items })
 }
 
+fn validate_provenance_body_item(item: &BodyItemNode) -> Result<()> {
+   match item {
+      BodyItemNode::Agg(agg) =>
+         Err(Error::new(agg.agg_kw.span, "aggregation is not supported by `ascent_provenance!`")),
+      BodyItemNode::Negation(negation) =>
+         Err(Error::new(negation.neg_token.span, "negation is not supported by `ascent_provenance!`")),
+      BodyItemNode::Disjunction(disjunction) => {
+         for disjunct in &disjunction.disjuncts {
+            for nested_item in disjunct {
+               validate_provenance_body_item(nested_item)?;
+            }
+         }
+         Ok(())
+      },
+      BodyItemNode::MacroInvocation(invocation) =>
+         Err(Error::new(invocation.span(), "unexpanded rule macro in `ascent_provenance!`")),
+      BodyItemNode::Clause(_) | BodyItemNode::Generator(_) | BodyItemNode::Cond(_) => Ok(()),
+   }
+}
+
+fn validate_provenance_program(prog: &AscentProgram, rules: &[RuleNode]) -> Result<()> {
+   if let Some(attribute) = prog.attributes.iter().find(|attribute| attribute.path().is_ident("ds")) {
+      return Err(Error::new_spanned(attribute, "BYODS attributes are not supported by `ascent_provenance!`"))
+   }
+   for relation in &prog.relations {
+      if relation.kind.is_lattice() {
+         return Err(Error::new(relation.name.span(), "lattice relations are not supported by `ascent_provenance!`"))
+      }
+      if let Some(attribute) = relation.attrs.iter().find(|attribute| attribute.path().is_ident("ds")) {
+         return Err(Error::new_spanned(attribute, "BYODS attributes are not supported by `ascent_provenance!`"))
+      }
+   }
+   for rule in rules {
+      if rule.body_items.is_empty() {
+         let span = rule
+            .head_clauses
+            .first()
+            .map(|head| match head {
+               HeadItemNode::HeadClause(clause) => clause.rel.span(),
+               HeadItemNode::MacroInvocation(invocation) => invocation.span(),
+            })
+            .unwrap_or_else(Span::call_site);
+         return Err(Error::new(
+            span,
+            "empty-body fact rules are not supported by `ascent_provenance!`; add base facts as explicitly annotated relation rows",
+         ));
+      }
+      for body_item in &rule.body_items {
+         validate_provenance_body_item(body_item)?;
+      }
+   }
+   Ok(())
+}
+
 pub(crate) fn desugar_ascent_program(mut prog: AscentProgram) -> Result<AscentProgram> {
    let macros = prog.macros.iter().map(|m| (m.name.clone(), m)).collect::<HashMap<_, _>>();
+   let input_rules = std::mem::take(&mut prog.rules);
    let rules_macro_expanded =
-      prog.rules.into_iter().map(|r| rule_expand_macro_invocations(r, &macros)).collect::<Result<Vec<_>>>()?;
+      input_rules.into_iter().map(|r| rule_expand_macro_invocations(r, &macros)).collect::<Result<Vec<_>>>()?;
+
+   if prog.provenance_type.is_some() {
+      validate_provenance_program(&prog, &rules_macro_expanded)?;
+      for relation in &mut prog.relations {
+         relation.kind = RelationKind::Provenance;
+      }
+   }
 
    prog.rules = rules_macro_expanded
       .into_iter()

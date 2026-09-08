@@ -1,0 +1,13 @@
+error: aggregation is not supported by `ascent_provenance!`
+ --> tests/ui/provenance/aggregation.rs:7:22
+  |
+7 |    output(count) <-- agg count = ascent::aggregators::count() in input(_);
+  |                      ^^^
+
+warning: unused import: `HowProvenance`
+ --> tests/ui/provenance/aggregation.rs:1:14
+  |
+1 | use ascent::{HowProvenance, ascent_provenance};
+  |              ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default

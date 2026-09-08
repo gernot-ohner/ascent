@@ -61,11 +61,11 @@ impl AscentConfig {
             return Err(Error::new_spanned(
                attr,
                format!("unrecognized attribute. recognized attributes are: {recognized_attrs}"),
-            ));
+            ))
          }
       }
       if inter_rule_parallelism.is_some() && !is_parallel {
-         return Err(Error::new_spanned(inter_rule_parallelism, "attribute only allowed in parallel Ascent"));
+         return Err(Error::new_spanned(inter_rule_parallelism, "attribute only allowed in parallel Ascent"))
       }
       let default_ds = get_ds_attr(&attrs)?
          .unwrap_or_else(|| DsAttributeContents { path: parse_quote! {::ascent::rel}, args: TokenStream::default() });
@@ -88,6 +88,7 @@ pub(crate) struct AscentIr {
    pub signatures: Signatures,
    pub config: AscentConfig,
    pub is_parallel: bool,
+   pub provenance_type: Option<Type>,
 }
 
 #[derive(Clone)]
@@ -188,7 +189,7 @@ pub enum IndexValType {
 impl IrRelation {
    pub fn new(relation: RelationIdentity, indices: Vec<usize>) -> Self {
       // TODO this is not the right place for this
-      let val_type = if relation.is_lattice
+      let val_type = if relation.kind.is_lattice() || relation.kind.is_provenance()
       //|| indices.len() == relation.field_types.len()
       {
          IndexValType::Reference
@@ -238,7 +239,7 @@ pub(crate) fn compile_ascent_program_to_hir(prog: &AscentProgram, is_parallel: b
    for (rel, rel_identity) in rel_identities {
       let ds_attribute = get_ds_attr(&rel.attrs)?;
 
-      if rel.is_lattice {
+      if rel.kind.is_lattice() {
          let indices = (0..rel_identity.field_types.len() - 1).collect_vec();
          let lat_full_index = IrRelation::new(rel_identity.clone(), indices);
          relations_ir_relations.entry(rel_identity.clone()).or_default().insert(lat_full_index.clone());
@@ -254,7 +255,7 @@ pub(crate) fn compile_ascent_program_to_hir(prog: &AscentProgram, is_parallel: b
          relations_initializations.insert(rel_identity.clone(), Rc::new(init_expr.clone()));
       }
 
-      let ds_attr = match (ds_attribute, rel.is_lattice) {
+      let ds_attr = match (ds_attribute, rel.kind.is_lattice()) {
          (None, true) => None,
          (None, false) => Some(config.default_ds.clone()),
          (Some(attr), true) =>
@@ -302,6 +303,7 @@ pub(crate) fn compile_ascent_program_to_hir(prog: &AscentProgram, is_parallel: b
       signatures,
       config,
       is_parallel,
+      provenance_type: prog.provenance_type.clone(),
    })
 }
 
@@ -331,7 +333,7 @@ fn compile_rule_to_ir_rule(rule: &RuleNode, prog: &AscentProgram) -> syn::Result
             let other_err = Error::new(other_var.span(), "variable being shadowed");
             let mut err = Error::new(v.span(), format!("`{v}` shadows another variable with the same name"));
             err.combine(other_err);
-            return Err(err);
+            return Err(err)
          }
          grounded_vars.push(v);
       }
@@ -363,7 +365,7 @@ fn compile_rule_to_ir_rule(rule: &RuleNode, prog: &AscentProgram) -> syn::Result
                   let expr_idents = expr_get_vars(cond_expr);
                   if !expr_idents.iter().all(|v| self_vars.contains(v)) {
                      first_two_clauses_simple = false;
-                     break;
+                     break
                   }
                   self_vars.extend(cond_cl.bound_vars());
                }
@@ -418,10 +420,10 @@ fn compile_rule_to_ir_rule(rule: &RuleNode, prog: &AscentProgram) -> syn::Result
                .enumerate()
                .filter(|(_i, expr)| {
                   if is_wild_card(expr) {
-                     return false;
+                     return false
                   } else if let Some(ident) = expr_to_ident(expr) {
                      if agg.bound_args.iter().contains(&ident) {
-                        return false;
+                        return false
                      }
                   }
                   true

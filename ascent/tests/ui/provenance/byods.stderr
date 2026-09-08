@@ -1,0 +1,13 @@
+error: BYODS attributes are not supported by `ascent_provenance!`
+ --> tests/ui/provenance/byods.rs:5:4
+  |
+5 |    #![ds(ascent::rel)]
+  |    ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `HowProvenance`
+ --> tests/ui/provenance/byods.rs:1:14
+  |
+1 | use ascent::{HowProvenance, ascent_provenance};
+  |              ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default

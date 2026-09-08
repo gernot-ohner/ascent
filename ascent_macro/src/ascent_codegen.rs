@@ -35,7 +35,7 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
          #rel_ind_common: #rel_ind_common_type,
       });
       field_defaults.push(quote! {#name : Default::default(), #rel_ind_common: Default::default(),});
-      if rel.is_lattice && mir.is_parallel {
+      if rel.kind.is_lattice() && mir.is_parallel {
          let lattice_mutex_name = lattice_insertion_mutex_var_name(rel);
          relation_fields.push(quote! {
             #lattice_mutex_name: ::std::vec::Vec<std::sync::Mutex<()>>,
@@ -97,7 +97,7 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
    for relation in mir.relations_ir_relations.keys().sorted_by_key(|rel| &rel.name) {
       use crate::quote::ToTokens;
       for (i, field_type) in relation.field_types.iter().enumerate() {
-         let is_lat = relation.is_lattice && i == relation.field_types.len() - 1;
+         let is_lat = relation.kind.is_lattice() && i == relation.field_types.len() - 1;
          let add = if let Type::Path(path) = field_type {
             let container = if is_lat { &mut lat_field_type_names } else { &mut field_type_names };
             container.insert(path.path.clone().into_token_stream().to_string())
@@ -121,6 +121,18 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
          }
       }
    }
+   if let Some(provenance_type) = &mir.provenance_type {
+      type_constraints.push(quote! {
+         fn __provenance_semiring_constraint<T: ::ascent::ProvenanceSemiring>() {}
+         __provenance_semiring_constraint::<#provenance_type>();
+      });
+      if mir.sccs.iter().any(|scc| scc.is_looping) {
+         type_constraints.push(quote! {
+            fn __convergent_provenance_semiring_constraint<T: ::ascent::ConvergentProvenanceSemiring>() {}
+            __convergent_provenance_semiring_constraint::<#provenance_type>();
+         });
+      }
+   }
 
    let mut relation_initializations = vec![];
    for (rel, md) in mir.relations_metadata.iter().sorted_by_key(|(rel, _)| &rel.name) {
@@ -131,11 +143,13 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
          });
       }
    }
-   if !relation_initializations.is_empty() {
+   if !relation_initializations.is_empty() && mir.provenance_type.is_none() {
       relation_initializations.push(quote! {
          _self.update_indices_priv();
       })
    }
+
+   let provenance_run_prelude = compile_provenance_run_prelude(mir);
 
    let par_usings = if mir.is_parallel {
       quote! {
@@ -185,6 +199,7 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
             #![allow(clippy::all)]
             macro_rules! __check_return_conditions {() => {};}
             #run_usings
+            #provenance_run_prelude
             self.update_indices_priv();
             let _self = self;
             #(#sccs_compiled)*
@@ -203,6 +218,7 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
                if timeout < ::std::time::Duration::MAX && __start_time.elapsed() >= timeout {return false;}
             };}
             #run_usings
+            #provenance_run_prelude
             self.update_indices_priv();
             let _self = self;
             #(#sccs_compiled)*
@@ -254,6 +270,8 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
    };
    let rule_time_fields = if mir.config.include_rule_times { rule_time_fields } else { vec![] };
    let rule_time_fields_defaults = if mir.config.include_rule_times { rule_time_fields_defaults } else { vec![] };
+   let provenance_state_field = mir.provenance_type.as_ref().map(|_| quote! { __provenance_has_run: bool, });
+   let provenance_state_default = mir.provenance_type.as_ref().map(|_| quote! { __provenance_has_run: false, });
 
    let mut rel_codegens = vec![];
    for rel in mir.relations_ir_relations.keys() {
@@ -275,6 +293,7 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
          #(#rule_time_fields)*
          update_time_nanos: std::sync::atomic::AtomicU64,
          update_indices_duration: std::time::Duration,
+         #provenance_state_field
       }
       impl #impl_impl_generics #struct_name #impl_ty_generics #impl_where_clause {
          #run_func
@@ -316,7 +335,8 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
                scc_iters: [0; #sccs_count],
                #(#rule_time_fields_defaults)*
                update_time_nanos: Default::default(),
-               update_indices_duration: std::time::Duration::default()
+               update_indices_duration: std::time::Duration::default(),
+               #provenance_state_default
             };
             #(#relation_initializations_for_default_impl)*
             _self
@@ -344,7 +364,7 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
 fn rel_ind_common_type(rel: &RelationIdentity, mir: &AscentMir) -> Type {
    match &mir.relations_metadata[rel].ds_attr {
       None => {
-         assert!(rel.is_lattice);
+         assert!(rel.kind.is_lattice());
          parse_quote! { () }
       },
       Some(ds_attr) => {
@@ -360,9 +380,9 @@ fn rel_index_type(rel: &IrRelation, mir: &AscentMir) -> Type {
    let key_type = rel.key_type();
    let value_type = rel.value_type();
 
-   let is_lat_full_index = rel.relation.is_lattice && &mir.lattices_full_indices[&rel.relation] == rel;
+   let is_lat_full_index = rel.relation.kind.is_lattice() && &mir.lattices_full_indices[&rel.relation] == rel;
 
-   if rel.relation.is_lattice {
+   if rel.relation.kind.is_lattice() {
       let res = if !mir.is_parallel {
          if is_lat_full_index {
             quote_spanned! { span=>ascent::internal::RelFullIndexType<#key_type, #value_type> }
@@ -394,11 +414,11 @@ fn rel_index_type(rel: &IrRelation, mir: &AscentMir) -> Type {
 }
 
 fn rel_type(rel: &RelationIdentity, mir: &AscentMir) -> Type {
-   let field_types = tuple_type(&rel.field_types);
+   let field_types = physical_row_type(rel, mir);
 
    match &mir.relations_metadata[rel].ds_attr {
       None => {
-         assert!(rel.is_lattice);
+         assert!(rel.kind.is_lattice());
          if mir.is_parallel {
             parse_quote! {::ascent::boxcar::Vec<::std::sync::RwLock<#field_types>>}
          } else {
@@ -420,7 +440,7 @@ fn rel_index_to_macro_input(ind: &[usize]) -> TokenStream {
 
 fn rel_ds_macro_input(rel: &RelationIdentity, mir: &AscentMir) -> TokenStream {
    let span = rel.name.span();
-   let field_types = tuple_type(&rel.field_types);
+   let field_types = physical_row_type(rel, mir);
    let indices = mir.relations_ir_relations[rel]
       .iter()
       .sorted_by_key(|r| &r.indices)
@@ -441,8 +461,74 @@ fn rel_ds_macro_input(rel: &RelationIdentity, mir: &AscentMir) -> TokenStream {
    }
 }
 
+fn physical_field_types(rel: &RelationIdentity, mir: &AscentMir) -> Vec<Type> {
+   let mut field_types = rel.field_types.clone();
+   if rel.kind.is_provenance() {
+      field_types.push(mir.provenance_type.clone().expect("provenance relation without semiring type"));
+   }
+   field_types
+}
+
+fn physical_row_type(rel: &RelationIdentity, mir: &AscentMir) -> Type { tuple_type(&physical_field_types(rel, mir)) }
+
 fn rule_time_field_name(scc_ind: usize, rule_ind: usize) -> Ident {
    Ident::new(&format!("rule{}_{}_duration", scc_ind, rule_ind), Span::call_site())
+}
+
+fn compile_provenance_run_prelude(mir: &AscentMir) -> TokenStream {
+   let Some(provenance_type) = &mir.provenance_type else { return quote! {} };
+   let mut coalesce_relations = vec![];
+   for relation in mir
+      .relations_ir_relations
+      .keys()
+      .filter(|relation| relation.kind.is_provenance())
+      .sorted_by_key(|relation| &relation.name)
+   {
+      let relation_name = &relation.name;
+      let row_type = physical_row_type(relation, mir);
+      let key_type = tuple_type(&relation.field_types);
+      let provenance_index = syn::Index::from(relation.field_types.len());
+      let key_fields = (0..relation.field_types.len())
+         .map(|field_index| {
+            let field_index = syn::Index::from(field_index);
+            parse_quote_spanned! {relation.name.span()=> __row.#field_index.clone()}
+         })
+         .collect_vec();
+      let key_tuple = tuple_spanned(&key_fields, relation.name.span());
+      coalesce_relations.push(quote_spanned! {relation.name.span()=>
+         {
+            let mut __coalesced_rows: ::std::vec::Vec<#row_type> =
+               ::std::vec::Vec::with_capacity(self.#relation_name.len());
+            let mut __coalesced_indices: ::ascent::hashbrown::HashMap<#key_type, usize> =
+               ::ascent::hashbrown::HashMap::with_capacity(self.#relation_name.len());
+            for __row in ::std::mem::take(&mut self.#relation_name) {
+               if __row.#provenance_index == <#provenance_type as ::ascent::ProvenanceSemiring>::zero() {
+                  continue;
+               }
+               let __key = #key_tuple;
+               if let Some(&__existing_index) = __coalesced_indices.get(&__key) {
+                  ::ascent::ProvenanceSemiring::add_assign(
+                     &mut __coalesced_rows[__existing_index].#provenance_index,
+                     &__row.#provenance_index,
+                  );
+               } else {
+                  __coalesced_indices.insert(__key, __coalesced_rows.len());
+                  __coalesced_rows.push(__row);
+               }
+            }
+            __coalesced_rows.retain(|__row| {
+               __row.#provenance_index != <#provenance_type as ::ascent::ProvenanceSemiring>::zero()
+            });
+            self.#relation_name = __coalesced_rows;
+         }
+      });
+   }
+   quote! {
+      if ::std::mem::replace(&mut self.__provenance_has_run, true) {
+         panic!("`run()` may only be called once on an `ascent_provenance!` program");
+      }
+      #(#coalesce_relations)*
+   }
 }
 
 fn compile_mir_scc(mir: &AscentMir, scc_ind: usize) -> proc_macro2::TokenStream {
@@ -732,7 +818,7 @@ fn compile_update_indices_function_body(mir: &AscentMir) -> proc_macro2::TokenSt
       } else {
          quote! {to_c_rel_index_write}
       };
-      let to_rel_index = if r.is_lattice {
+      let to_rel_index = if r.kind.is_lattice() {
          quote! {}
       } else {
          quote! {.#to_rel_index_fn(#_ref #_self.#ind_common) }
@@ -755,7 +841,7 @@ fn compile_update_indices_function_body(mir: &AscentMir) -> proc_macro2::TokenSt
             &parse_quote_spanned! {r.name.span()=> tuple},
             &parse_quote_spanned! {r.name.span()=> _i},
          );
-         let _pre_ref = if r.is_lattice { quote!() } else { _ref.clone() };
+         let _pre_ref = if r.kind.is_lattice() { quote!() } else { _ref.clone() };
          update_indices.push(quote_spanned! {r.name.span()=>
             let selection_tuple = #selection_tuple;
             let rel_ind = #_ref #_self.#ind_name;
@@ -763,7 +849,7 @@ fn compile_update_indices_function_body(mir: &AscentMir) -> proc_macro2::TokenSt
          });
       }
       let rel_name = &r.name;
-      let maybe_lock = if r.is_lattice && mir.is_parallel {
+      let maybe_lock = if r.kind.is_lattice() && mir.is_parallel {
          quote_spanned! {r.name.span()=> let tuple = tuple.read().unwrap(); }
       } else {
          quote! {}
@@ -898,7 +984,7 @@ fn compile_mir_rule_inner(
          } else {
             #rule_cp2_compiled
          }
-      };
+      }
    }
    if clause_ind < rule.body_items.len() {
       let bitem = &rule.body_items[clause_ind];
@@ -935,6 +1021,7 @@ fn compile_mir_rule_inner(
                &matched_val_ident,
                &parse_quote! {_self.#bclause_rel_name},
                cloning_needed,
+               Some(clause_ind),
                mir,
             );
 
@@ -983,6 +1070,7 @@ fn compile_mir_rule_inner(
                   &cl1_matched_val_ident,
                   &parse_quote! {_self.#cl1_rel_name},
                   cloning_needed,
+                  rule.simple_join_start_index,
                   mir,
                );
                let cl1_vars_assignments = vec![cl1_vars_assignments];
@@ -1061,6 +1149,7 @@ fn compile_mir_rule_inner(
                &parse_quote_spanned! {agg.span=> __val},
                &parse_quote! {_self.#rel_name},
                false,
+               None,
                mir,
             );
 
@@ -1093,6 +1182,21 @@ fn compile_mir_rule_inner(
 fn head_update_code(rule: &MirRule, scc: &MirScc, mir: &AscentMir) -> proc_macro2::TokenStream {
    let mut add_rows = vec![];
 
+   let provenance_initialization = mir.provenance_type.as_ref().map(|provenance_type| {
+      let provenance_vars = rule
+         .body_items
+         .iter()
+         .enumerate()
+         .filter(|(_, item)| matches!(item, MirBodyItem::Clause(_)))
+         .map(|(clause_ind, _)| provenance_var_name(clause_ind));
+      quote! {
+         let mut __provenance = <#provenance_type as ::ascent::ProvenanceSemiring>::one();
+         #(
+            __provenance = ::ascent::ProvenanceSemiring::multiply(&__provenance, #provenance_vars);
+         )*
+      }
+   });
+
    let set_changed_true_code = if !mir.is_parallel {
       quote! { __changed = true; }
    } else {
@@ -1101,11 +1205,14 @@ fn head_update_code(rule: &MirRule, scc: &MirScc, mir: &AscentMir) -> proc_macro
 
    for hcl in rule.head_clause.iter() {
       let head_rel_name = Ident::new(&hcl.rel.name.to_string(), hcl.span);
-      let hcl_args_converted = hcl.args.iter().cloned().map(convert_head_arg).collect_vec();
+      let mut hcl_args_converted = hcl.args.iter().cloned().map(convert_head_arg).collect_vec();
+      if hcl.rel.kind.is_provenance() {
+         hcl_args_converted.push(parse_quote_spanned! {hcl.span=> __provenance.clone()});
+      }
       let new_row_tuple = tuple_spanned(&hcl_args_converted, hcl.args_span);
 
       let head_relation = &hcl.rel;
-      let row_type = tuple_type(&head_relation.field_types);
+      let row_type = physical_row_type(head_relation, mir);
 
       let mut update_indices = vec![];
       let rel_indices = scc.dynamic_relations.get(head_relation);
@@ -1161,6 +1268,7 @@ fn head_update_code(rule: &MirRule, scc: &MirScc, mir: &AscentMir) -> proc_macro
       let expr_for_rel_maybe_mut = if mir.is_parallel { expr_for_c_rel_write } else { expr_for_rel_write };
       let head_rel_full_index_expr_new =
          expr_for_rel_maybe_mut(&MirRelation::from(head_rel_full_index.clone(), New), mir);
+      let head_rel_full_index_expr_new_read = expr_for_rel(&MirRelation::from(head_rel_full_index.clone(), New), mir);
       let head_rel_full_index_expr_delta = expr_for_rel(&MirRelation::from(head_rel_full_index.clone(), Delta), mir);
       let head_rel_full_index_expr_total = expr_for_rel(&MirRelation::from(head_rel_full_index.clone(), Total), mir);
 
@@ -1171,7 +1279,7 @@ fn head_update_code(rule: &MirRule, scc: &MirScc, mir: &AscentMir) -> proc_macro
       }
       .with_span(hcl.span);
 
-      let new_row_to_be_pushed = (0..hcl.rel.field_types.len())
+      let new_row_to_be_pushed = (0..physical_field_types(&hcl.rel, mir).len())
          .map(|i| {
             let ind = syn::Index::from(i);
             let clone = if used_fields.contains(&i) {
@@ -1195,7 +1303,74 @@ fn head_update_code(rule: &MirRule, scc: &MirScc, mir: &AscentMir) -> proc_macro
          }
       };
 
-      if !hcl.rel.is_lattice {
+      if hcl.rel.kind.is_provenance() {
+         let provenance_type = mir.provenance_type.as_ref().expect("provenance relation without semiring type");
+         let provenance_index = syn::Index::from(hcl.rel.field_types.len());
+         let provenance_key_args = (0..hcl.rel.field_types.len())
+            .map(|i| {
+               let index = syn::Index::from(i);
+               parse_quote_spanned! {hcl.span=> __new_row.#index.clone()}
+            })
+            .collect_vec();
+         let provenance_key_tuple = tuple_spanned(&provenance_key_args, hcl.span);
+         let add_row = quote_spanned! {hcl.span=>
+            let __new_row: #row_type = #new_row_tuple;
+            if __new_row.#provenance_index != <#provenance_type as ::ascent::ProvenanceSemiring>::zero() {
+               let __provenance_key = #provenance_key_tuple;
+               let __existing_ind_in_new = ::ascent::internal::RelIndexRead::index_get(
+                  &#head_rel_full_index_expr_new_read,
+                  &__provenance_key,
+               )
+               .and_then(|mut indices| indices.next().copied());
+               let __new_has_ind = __existing_ind_in_new.is_some();
+               let __existing_ind = __existing_ind_in_new
+                  .or_else(|| {
+                     ::ascent::internal::RelIndexRead::index_get(
+                        &#head_rel_full_index_expr_delta,
+                        &__provenance_key,
+                     )
+                     .and_then(|mut indices| indices.next().copied())
+                  })
+                  .or_else(|| {
+                     ::ascent::internal::RelIndexRead::index_get(
+                        &#head_rel_full_index_expr_total,
+                        &__provenance_key,
+                     )
+                     .and_then(|mut indices| indices.next().copied())
+                  });
+
+               if let Some(__existing_ind) = __existing_ind {
+                  let __provenance_changed = ::ascent::ProvenanceSemiring::add_assign(
+                     &mut _self.#head_rel_name[__existing_ind].#provenance_index,
+                     &__new_row.#provenance_index,
+                  );
+                  if __provenance_changed {
+                     if !__new_has_ind {
+                        let __new_row_ind = __existing_ind;
+                        #rel_full_index_write_trait::insert_if_not_present(
+                           #new_ref #head_rel_full_index_expr_new,
+                           &__provenance_key,
+                           __new_row_ind,
+                        );
+                        #(#update_indices)*
+                     }
+                     #set_changed_true_code
+                  }
+               } else {
+                  let __new_row_ind = _self.#head_rel_name.len();
+                  #rel_full_index_write_trait::insert_if_not_present(
+                     #new_ref #head_rel_full_index_expr_new,
+                     &__provenance_key,
+                     __new_row_ind,
+                  );
+                  #(#update_indices)*
+                  _self.#head_rel_name.push(#new_row_to_be_pushed);
+                  #set_changed_true_code
+               }
+            }
+         };
+         add_rows.push(add_row);
+      } else if !hcl.rel.kind.is_lattice() {
          let add_row = quote_spanned! {hcl.span=>
             let __new_row: #row_type = #new_row_tuple;
 
@@ -1286,7 +1461,10 @@ fn head_update_code(rule: &MirRule, scc: &MirScc, mir: &AscentMir) -> proc_macro
          add_rows.push(add_row);
       }
    }
-   quote! {#(#add_rows)*}
+   quote! {
+      #provenance_initialization
+      #(#add_rows)*
+   }
 }
 
 fn lattice_insertion_mutex_var_name(head_relation: &RelationIdentity) -> Ident {
@@ -1310,7 +1488,7 @@ fn expr_for_rel(rel: &MirRelation, mir: &AscentMir) -> proc_macro2::TokenStream 
       ir_name: &Ident, version: MirRelationVersion, _mir: &AscentMir, mir_rel: &MirRelation,
    ) -> (TokenStream, bool) {
       let var = ir_relation_version_var_name(ir_name, version);
-      if mir_rel.relation.is_lattice {
+      if mir_rel.relation.kind.is_lattice() {
          (quote! { & #var }, true)
       } else {
          let rel_ind_common = ir_relation_version_var_name(&rel_ind_common_var_name(&mir_rel.relation), version);
@@ -1336,7 +1514,7 @@ fn expr_for_rel(rel: &MirRelation, mir: &AscentMir) -> proc_macro2::TokenStream 
 
 fn expr_for_rel_write(mir_rel: &MirRelation, _mir: &AscentMir) -> proc_macro2::TokenStream {
    let var = mir_rel.var_name();
-   if mir_rel.relation.is_lattice {
+   if mir_rel.relation.kind.is_lattice() {
       quote! { #var }
    } else {
       let rel_ind_common = ir_relation_version_var_name(&rel_ind_common_var_name(&mir_rel.relation), mir_rel.version);
@@ -1346,7 +1524,7 @@ fn expr_for_rel_write(mir_rel: &MirRelation, _mir: &AscentMir) -> proc_macro2::T
 
 fn expr_for_c_rel_write(mir_rel: &MirRelation, _mir: &AscentMir) -> proc_macro2::TokenStream {
    let var = mir_rel.var_name();
-   if mir_rel.relation.is_lattice {
+   if mir_rel.relation.kind.is_lattice() {
       quote! { #var }
    } else {
       let rel_ind_common = ir_relation_version_var_name(&rel_ind_common_var_name(&mir_rel.relation), mir_rel.version);
@@ -1356,7 +1534,7 @@ fn expr_for_c_rel_write(mir_rel: &MirRelation, _mir: &AscentMir) -> proc_macro2:
 
 fn clause_var_assignments(
    rel: &MirRelation, vars: impl Iterator<Item = (usize, Ident)>, val_ident: &Ident, relation_expr: &Expr,
-   cloning_needed: bool, mir: &AscentMir,
+   cloning_needed: bool, clause_ind: Option<usize>, mir: &AscentMir,
 ) -> proc_macro2::TokenStream {
    let mut assignments = vec![];
 
@@ -1385,10 +1563,20 @@ fn clause_var_assignments(
       }
    }
 
+   if rel.relation.kind.is_provenance() {
+      let provenance_type = mir.provenance_type.as_ref().expect("provenance relation without semiring type");
+      let provenance_index = syn::Index::from(rel.relation.field_types.len());
+      let provenance_var = provenance_var_name(clause_ind.expect("provenance clause without body position"));
+      assignments.push(quote! {
+         let #provenance_var: &#provenance_type = &__row.#provenance_index;
+      });
+      any_vars = true;
+   }
+
    if any_vars {
       match &rel.val_type {
          IndexValType::Reference => {
-            let maybe_lock = if rel.relation.is_lattice && mir.is_parallel {
+            let maybe_lock = if rel.relation.kind.is_lattice() && mir.is_parallel {
                quote! {.read().unwrap()}
             } else {
                quote! {}
@@ -1413,6 +1601,10 @@ fn clause_var_assignments(
    quote! {
       #(#assignments)*
    }
+}
+
+fn provenance_var_name(clause_ind: usize) -> Ident {
+   Ident::new(&format!("__provenance_body_{clause_ind}"), Span::call_site())
 }
 
 fn index_get_entry_val_for_insert(rel_ind: &IrRelation, tuple_expr: &Expr, ind_expr: &Expr) -> Expr {

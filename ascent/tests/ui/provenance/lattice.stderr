@@ -1,0 +1,13 @@
+error: lattice relations are not supported by `ascent_provenance!`
+ --> tests/ui/provenance/lattice.rs:6:12
+  |
+6 |    lattice output(i32, Dual<i32>);
+  |            ^^^^^^
+
+warning: unused imports: `Dual` and `HowProvenance`
+ --> tests/ui/provenance/lattice.rs:1:14
+  |
+1 | use ascent::{Dual, HowProvenance, ascent_provenance};
+  |              ^^^^  ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default

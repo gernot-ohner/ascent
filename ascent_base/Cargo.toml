@@ -8,4 +8,5 @@ license = "MIT"
 description = "support library for the ascent package"
 
 [dependencies]
+num-bigint.workspace = true
 pastey = { workspace = true }

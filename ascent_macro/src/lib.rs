@@ -20,7 +20,7 @@ use proc_macro::TokenStream;
 use proc_macro2::Span;
 use syn::parse::{ParseStream, Parser};
 use syn::spanned::Spanned;
-use syn::{Attribute, Ident, Result, Token, parse_quote, parse_quote_spanned};
+use syn::{Attribute, Ident, Result, Token, Type, parse_quote, parse_quote_spanned};
 use syn_utils::ResTokenStream2Ext;
 
 use crate::ascent_codegen::compile_mir;
@@ -53,6 +53,51 @@ use crate::ascent_mir::compile_hir_to_mir;
 #[proc_macro]
 pub fn ascent(input: TokenStream) -> TokenStream {
    ascent_impl(input.into(), AscentMacroKind { is_ascent_run: false, is_parallel: false }).into_token_stream()
+}
+
+mod provenance_kw {
+   syn::custom_keyword!(semiring);
+}
+
+/// Generates a serial positive Ascent program whose relation rows carry provenance annotations.
+///
+/// Input relations must be populated with explicitly annotated rows. The semiring annotation is
+/// hidden from rules and appended as the final field of each public relation tuple.
+#[proc_macro]
+pub fn ascent_provenance(input: TokenStream) -> TokenStream { ascent_provenance_impl(input.into()).into_token_stream() }
+
+/// Provenance evaluation is serial-only in the prototype.
+#[proc_macro]
+pub fn ascent_provenance_par(_input: TokenStream) -> TokenStream {
+   syn::Error::new(Span::call_site(), "parallel provenance programs are not supported; use `ascent_provenance!`")
+      .into_compile_error()
+      .into()
+}
+
+fn ascent_provenance_impl(input: proc_macro2::TokenStream) -> Result<proc_macro2::TokenStream> {
+   #[derive(Parse)]
+   struct ProvenanceInput {
+      _semiring_kw: provenance_kw::semiring,
+      provenance_type: Type,
+      _semi: Token![;],
+      ascent_code: proc_macro2::TokenStream,
+   }
+
+   let ProvenanceInput { provenance_type, ascent_code, .. } = syn::parse2(input)?;
+   let macro_path = parse_quote!(::ascent::ascent_provenance);
+   let mut prog = match Parser::parse2(|input: ParseStream| parse_ascent_program(input, macro_path), ascent_code)? {
+      Either::Left(prog) => prog,
+      Either::Right(mut include_source_call) => {
+         let before_tokens = include_source_call.before_tokens;
+         include_source_call.before_tokens = quote! {
+            semiring #provenance_type;
+            #before_tokens
+         };
+         return Ok(include_source_call.macro_call_output())
+      },
+   };
+   prog.provenance_type = Some(provenance_type);
+   compile_ascent_program(prog, false, false)
 }
 
 /// Similar to `ascent`, allows writing logic programs in Rust.
@@ -237,8 +282,13 @@ pub(crate) fn ascent_impl(input: proc_macro2::TokenStream, kind: AscentMacroKind
       Either::Right(include_source_call) => return Ok(include_source_call.macro_call_output()),
    };
 
-   let prog = desugar_ascent_program(prog)?;
+   compile_ascent_program(prog, is_parallel, is_ascent_run)
+}
 
+fn compile_ascent_program(
+   prog: AscentProgram, is_parallel: bool, is_ascent_run: bool,
+) -> Result<proc_macro2::TokenStream> {
+   let prog = desugar_ascent_program(prog)?;
    let hir = compile_ascent_program_to_hir(&prog, is_parallel)?;
 
    let mir = compile_hir_to_mir(&hir)?;
