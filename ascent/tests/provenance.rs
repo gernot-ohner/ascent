@@ -24,6 +24,34 @@ fn copy_rule_preserves_input_token() {
    assert_eq!(program.output, vec![(7, token)]);
 }
 
+mod reusable_source {
+   ascent::ascent_source! {
+      copy:
+      relation included_input(i32);
+      relation included_output(i32);
+      included_output(x) <-- included_input(x);
+   }
+}
+
+ascent_provenance! {
+   semiring HowProvenance<String>;
+
+   struct IncludedSourceProgram;
+
+   include_source!(reusable_source::copy);
+}
+
+#[test]
+fn existing_ascent_sources_run_unchanged_with_provenance() {
+   let token = HowProvenance::token("included".to_owned());
+   let mut program = IncludedSourceProgram::default();
+   program.included_input = vec![(9, token.clone())];
+
+   program.run();
+
+   assert_eq!(program.included_output, vec![(9, token)]);
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct NaturalProvenance(u64);
 
@@ -317,4 +345,13 @@ fn provenance_program_rejects_a_second_run() {
    program.input = vec![(7, HowProvenance::token("x".to_owned()))];
    program.run();
    program.run();
+}
+
+#[test]
+#[allow(deprecated)]
+#[should_panic(expected = "`update_indices()` is not supported")]
+fn provenance_program_rejects_manual_index_updates() {
+   let mut program = CopyProgram::default();
+   program.input = vec![(7, HowProvenance::token("x".to_owned()))];
+   program.update_indices();
 }

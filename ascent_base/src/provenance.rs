@@ -24,7 +24,13 @@ pub trait ProvenanceSemiring: Clone + Eq {
    fn multiply(&self, other: &Self) -> Self;
 }
 
-/// Marks semirings whose ascending annotation chains terminate for finite inputs.
+/// Marks semirings that are safe for recursive cumulative re-evaluation.
+///
+/// In addition to the [`ProvenanceSemiring`] laws, addition must be idempotent
+/// and every ascending annotation chain reachable from a finite input must
+/// terminate. The evaluator re-enqueues a changed tuple with its full
+/// accumulated annotation, so idempotence is required to avoid recounting old
+/// derivations.
 pub trait ConvergentProvenanceSemiring: ProvenanceSemiring {}
 
 /// Canonical polynomials over tokens in `N[X]`.

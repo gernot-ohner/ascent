@@ -63,14 +63,20 @@ trait ConvergentProvenanceSemiring: ProvenanceSemiring {}
 `add_assign` reports whether an annotation genuinely changed. The evaluator
 uses that result to decide whether a tuple must be scheduled again. Although
 Rust cannot encode the algebraic laws in a trait bound, implementations used by
-the macro must behave as commutative semirings.
+the macro must behave as commutative semirings. Implementations of
+`ConvergentProvenanceSemiring` must additionally have idempotent addition and
+terminating ascending chains for finite inputs. Idempotence is necessary
+because the recursive scheduler reprocesses the tuple's full accumulated
+annotation after a change.
 
 At the beginning of `run()`, every relation is normalized. Duplicate logical
 tuples are combined with semiring addition and zero-annotated rows are removed.
 The generated program rejects a second call to `run()` or `run_timeout()`.
 This is deliberately stricter than ordinary Ascent because a second batch run
 would double-count how-provenance without a provenance-aware incremental
-maintenance model.
+maintenance model. It also rejects the deprecated public `update_indices()`
+method because indexing unnormalized provenance rows before `run()` would leave
+stale row references after coalescing.
 
 ## Included domains
 
@@ -169,10 +175,20 @@ cargo +1.85.0 run -p ascent --example provenance_diamond
 cargo +1.85.0 run -p ascent --example provenance_recursive_why
 ```
 
-Before handoff, the complete workspace and the separately excluded serial and
-parallel integration suites are rerun from a clean test invocation. Parallel
-regression testing protects the existing `ascent_par!` path; it does not imply
-parallel support for provenance.
+The final clean verification passed:
+
+- `cargo +1.85.0 test --workspace`, including 14 provenance runtime tests,
+  three algebra tests, and all seven compile-fail fixtures
+- the focused provenance suites with `--no-default-features`
+- all 64 tests in the separately excluded `ascent_tests` crate in serial mode
+  and all 64 again with its `par` feature
+- both runnable examples, scoped Clippy checks, targeted formatting checks,
+  and Markdown linting
+
+Parallel regression testing protects the existing `ascent_par!` path; it does
+not imply parallel support for provenance. The focused runtime suite also
+checks that reusable Ascent rule sources run unchanged in provenance mode and
+that a user-defined semiring works through the public trait.
 
 ## Next research directions
 

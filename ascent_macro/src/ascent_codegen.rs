@@ -272,6 +272,13 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
    let rule_time_fields_defaults = if mir.config.include_rule_times { rule_time_fields_defaults } else { vec![] };
    let provenance_state_field = mir.provenance_type.as_ref().map(|_| quote! { __provenance_has_run: bool, });
    let provenance_state_default = mir.provenance_type.as_ref().map(|_| quote! { __provenance_has_run: false, });
+   let public_update_indices_body = if mir.provenance_type.is_some() {
+      quote! {
+         panic!("`update_indices()` is not supported on an `ascent_provenance!` program; populate annotated relation rows and call `run()` directly");
+      }
+   } else {
+      quote! { self.update_indices_priv(); }
+   };
 
    let mut rel_codegens = vec![];
    for rel in mir.relations_ir_relations.keys() {
@@ -310,7 +317,7 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
 
          #[deprecated = "Explicit call to update_indices not required anymore."]
          pub fn update_indices(&mut self) {
-            self.update_indices_priv();
+            #public_update_indices_body
          }
          fn type_constraints() {
             #![allow(clippy::all)]
@@ -491,11 +498,11 @@ fn compile_provenance_run_prelude(mir: &AscentMir) -> TokenStream {
       let key_fields = (0..relation.field_types.len())
          .map(|field_index| {
             let field_index = syn::Index::from(field_index);
-            parse_quote_spanned! {relation.name.span()=> __row.#field_index.clone()}
+            parse_quote! {__row.#field_index.clone()}
          })
          .collect_vec();
-      let key_tuple = tuple_spanned(&key_fields, relation.name.span());
-      coalesce_relations.push(quote_spanned! {relation.name.span()=>
+      let key_tuple = tuple(&key_fields);
+      coalesce_relations.push(quote! {
          {
             let mut __coalesced_rows: ::std::vec::Vec<#row_type> =
                ::std::vec::Vec::with_capacity(self.#relation_name.len());
@@ -1207,7 +1214,8 @@ fn head_update_code(rule: &MirRule, scc: &MirScc, mir: &AscentMir) -> proc_macro
       let head_rel_name = Ident::new(&hcl.rel.name.to_string(), hcl.span);
       let mut hcl_args_converted = hcl.args.iter().cloned().map(convert_head_arg).collect_vec();
       if hcl.rel.kind.is_provenance() {
-         hcl_args_converted.push(parse_quote_spanned! {hcl.span=> __provenance.clone()});
+         let provenance_ident = Ident::new("__provenance", Span::call_site());
+         hcl_args_converted.push(parse_quote! {#provenance_ident.clone()});
       }
       let new_row_tuple = tuple_spanned(&hcl_args_converted, hcl.args_span);
 
@@ -1304,6 +1312,7 @@ fn head_update_code(rule: &MirRule, scc: &MirScc, mir: &AscentMir) -> proc_macro
       };
 
       if hcl.rel.kind.is_provenance() {
+         let self_ref = quote! {_self};
          let provenance_type = mir.provenance_type.as_ref().expect("provenance relation without semiring type");
          let provenance_index = syn::Index::from(hcl.rel.field_types.len());
          let provenance_key_args = (0..hcl.rel.field_types.len())
@@ -1341,7 +1350,7 @@ fn head_update_code(rule: &MirRule, scc: &MirScc, mir: &AscentMir) -> proc_macro
 
                if let Some(__existing_ind) = __existing_ind {
                   let __provenance_changed = ::ascent::ProvenanceSemiring::add_assign(
-                     &mut _self.#head_rel_name[__existing_ind].#provenance_index,
+                     &mut #self_ref.#head_rel_name[__existing_ind].#provenance_index,
                      &__new_row.#provenance_index,
                   );
                   if __provenance_changed {
@@ -1357,14 +1366,14 @@ fn head_update_code(rule: &MirRule, scc: &MirScc, mir: &AscentMir) -> proc_macro
                      #set_changed_true_code
                   }
                } else {
-                  let __new_row_ind = _self.#head_rel_name.len();
+                  let __new_row_ind = #self_ref.#head_rel_name.len();
                   #rel_full_index_write_trait::insert_if_not_present(
                      #new_ref #head_rel_full_index_expr_new,
                      &__provenance_key,
                      __new_row_ind,
                   );
                   #(#update_indices)*
-                  _self.#head_rel_name.push(#new_row_to_be_pushed);
+                  #self_ref.#head_rel_name.push(#new_row_to_be_pushed);
                   #set_changed_true_code
                }
             }

@@ -44,6 +44,8 @@ fn how_provenance_is_a_canonical_polynomial_semiring() {
 
    assert_eq!(x1.multiply(&x2), x2.multiply(&x1));
    assert_eq!(x1.multiply(&x2).multiply(&x3), x1.multiply(&x2.multiply(&x3)));
+   assert_eq!(add(x1.clone(), &x2), add(x2.clone(), &x1));
+   assert_eq!(add(add(x1.clone(), &x2), &x3), add(x1.clone(), &add(x2.clone(), &x3)));
    assert_eq!(x1.multiply(&add(x2.clone(), &x3)), add(x1.multiply(&x2), &x1.multiply(&x3)));
 }
 
@@ -63,6 +65,8 @@ fn why_provenance_is_convergent_without_absorption() {
    assert_eq!(add(x1.clone(), &x1), x1);
    assert_eq!(x1.multiply(&x1), x1);
    assert_eq!(x1.multiply(&x2).multiply(&x3), x1.multiply(&x2.multiply(&x3)));
+   assert_eq!(add(x1.clone(), &x2), add(x2.clone(), &x1));
+   assert_eq!(add(add(x1.clone(), &x2), &x3), add(x1.clone(), &add(x2.clone(), &x3)));
 
    let alternatives = add(x1.multiply(&x2), &x1.multiply(&x3));
    assert_eq!(alternatives.to_string(), "{{x1,x2}, {x1,x3}}");
