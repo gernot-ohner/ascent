@@ -1,5 +1,5 @@
 error: `provenance` is only supported by serial Ascent
- --> tests/ui/why_provenance/parallel_ascent_run.rs:5:7
+ --> tests/ui/why_provenance/parallel/parallel_ascent_run.rs:5:7
   |
 5 |       #[provenance(&'static str)]
   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^

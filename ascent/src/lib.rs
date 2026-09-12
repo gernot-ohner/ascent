@@ -3,6 +3,9 @@
 //! See the documentation for [`ascent`], one of the main macros of this crate, for more information.
 
 #![deny(unused_crate_dependencies)]
+#[cfg(test)]
+use trybuild as _;
+
 pub mod internal;
 #[doc(hidden)]
 pub mod rel;
