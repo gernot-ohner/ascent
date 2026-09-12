@@ -96,12 +96,23 @@ pub(crate) fn lower_why_provenance(prog: &mut AscentProgram, is_parallel: bool) 
          }
       }
 
-      let forbidden_names = rule
+      let mut forbidden_names = rule
          .body_items
          .iter()
          .flat_map(body_item_get_bound_vars)
          .map(|ident| ident.to_string())
          .collect::<HashSet<_>>();
+      for body_item in &rule.body_items {
+         if let BodyItemNode::Clause(clause) = body_item {
+            forbidden_names.extend(
+               clause
+                  .cond_clauses
+                  .iter()
+                  .flat_map(|cond_clause| cond_clause.bound_vars())
+                  .map(|ident| ident.to_string()),
+            );
+         }
+      }
       let mut annotation_counter = 0;
       let mut body_annotations = Vec::new();
       for body_item in rule.body_items.iter_mut() {

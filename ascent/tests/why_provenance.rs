@@ -218,6 +218,44 @@ fn generated_annotation_names_do_not_capture_user_variables() {
 }
 
 #[test]
+fn generated_annotation_names_do_not_capture_attached_let_bindings() {
+   let mut result = ascent_run! {
+      relation ordinary(i32) = vec![(-1,), (1,), (2,)];
+      #[provenance(&'static str)] relation tagged(i32) = vec![
+         (-1, WhyProvenance::token("negative")),
+         (1, WhyProvenance::token("one")),
+         (2, WhyProvenance::token("two")),
+      ];
+      #[provenance(&'static str)] relation output(i32);
+
+      output(x) <-- ordinary(x) let __ascent_provenance_0 = 1_i32,
+         if *x > 0, tagged(x);
+   };
+
+   result.output.sort_by_key(|row| row.0);
+   assert_eq!(result.output, vec![(1, WhyProvenance::token("one")), (2, WhyProvenance::token("two"))]);
+}
+
+#[test]
+fn generated_annotation_names_do_not_capture_attached_if_let_bindings() {
+   let mut result = ascent_run! {
+      relation ordinary(i32) = vec![(-1,), (1,), (2,)];
+      #[provenance(&'static str)] relation tagged(i32) = vec![
+         (-1, WhyProvenance::token("negative")),
+         (1, WhyProvenance::token("one")),
+         (2, WhyProvenance::token("two")),
+      ];
+      #[provenance(&'static str)] relation output(i32);
+
+      output(x) <-- ordinary(x) if let Some(__ascent_provenance_0) = Some(*x),
+         if __ascent_provenance_0 > 0, tagged(x);
+   };
+
+   result.output.sort_by_key(|row| row.0);
+   assert_eq!(result.output, vec![(1, WhyProvenance::token("one")), (2, WhyProvenance::token("two"))]);
+}
+
+#[test]
 fn program_default_storage_provider_still_applies_to_ordinary_relations() {
    let result = ascent_run! {
       #![ds(ascent::rel)]
