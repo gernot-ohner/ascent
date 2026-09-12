@@ -2,19 +2,20 @@
 
 ## Scope for review
 
-This branch is a research prototype for evaluating that design. It is not an
+This branch is a research prototype for provenance in Ascent. It is not an
 upstream-ready proposal. The target is a small, correct implementation with an
-isolated API, executable examples, explicit semantic boundaries, and no
+explicit opt-in mode, executable examples, semantic boundaries, and no
 regressions in existing Ascent behavior.
 
 ## User-facing semantics
 
-`ascent_provenance!` accepts ordinary Ascent relation declarations and positive
-rules after one semiring declaration:
+Enable provenance in the existing serial `ascent!` or `ascent_run!` macro with
+`#![provenance(Type)]`. Without this attribute, ordinary Ascent behavior is
+unchanged. There is no separate provenance macro.
 
 ```rust
-ascent_provenance! {
-   semiring HowProvenance<String>;
+ascent! {
+   #![provenance(HowProvenance<String>)]
 
    struct Reachability;
 
@@ -32,6 +33,18 @@ evaluation, but it is the final field of each public relation row:
 program.edge = vec![
    (1, 2, HowProvenance::token("e12".to_owned())),
 ];
+```
+
+`ascent_run!` accepts annotated inputs from local variables, normalizes them,
+and evaluates immediately:
+
+```rust
+let result = ascent::ascent_run! {
+   #![provenance(HowProvenance<String>)]
+   relation edge(i32, i32) = inputs;
+   relation path(i32, i32);
+   path(x, z) <-- edge(x, y), edge(y, z);
+};
 ```
 
 Every rule derivation starts with `one`. Matching a relational body clause
@@ -98,10 +111,14 @@ annotation growth only.
 
 ## Compiler and evaluator architecture
 
-The macro shares the existing parse, high-level intermediate representation,
+Provenance uses the existing parse, high-level intermediate representation,
 middle-level intermediate representation, and code-generation pipeline.
-`ascent_provenance!` parses `semiring Type;`, attaches the type to the program,
-and invokes the normal compiler in serial mode.
+The shared parser consumes `#![provenance(Type)]` and attaches the type to the
+program. The compiler selects provenance behavior only when that type is
+present. Rule-source inclusion uses the same mechanism as ordinary Ascent.
+`ascent_run!` normalizes and indexes annotated relation initializers before
+evaluating the rules. It needs no run-state guard because its generated result
+has no `run()` method.
 
 The former relation/lattice Boolean distinction is represented by a relation
 kind with normal, lattice, and provenance variants. A provenance relation keeps
@@ -131,11 +148,12 @@ alternative rules, disjunction, Rust conditions, bindings, patterns,
 generators, rule macros, and multi-head rules. Existing rule bodies do not need
 provenance variables or rewritten relation arities.
 
-The macro produces focused compile errors for negation, aggregation, lattice
+Provenance mode produces focused compile errors for negation, aggregation, lattice
 relations, Bring Your Own Data Structures (BYODS) attributes, empty-body fact
 rules, and recursive use of a nonconvergent semiring. Provenance evaluation is
-serial; no parallel provenance macro is provided. Base facts must be supplied
-as annotated relation rows.
+serial; the existing `ascent_par!` and `ascent_run_par!` macros reject the
+provenance attribute. Duplicate attributes and missing semiring types also
+produce compile errors. Base facts must be supplied as annotated relation rows.
 
 ## Why recursive how-provenance stops here
 
@@ -161,17 +179,19 @@ point semantics.
 The focused suite covers semiring identities and laws, copy, join, projection,
 alternative rules, duplicate derivations, why-provenance collapsing behavior,
 input normalization, the diamond polynomial, supported Rust clauses, recursive
-acyclic and cyclic why-provenance, and the one-run guard. Six compile-fail
+acyclic and cyclic why-provenance, and the one-run guard. Nine compile-fail
 fixtures pin every explicit rejection category.
 
-Two reference-based tests additionally check nonlinear recursion
-(`path(x,z) <-- path(x,y), path(y,z)`) and mutually recursive relations.
+Three reference-based tests additionally check nonlinear recursion
+(`path(x,z) <-- path(x,y), path(y,z)`) through both serial macros and mutually
+recursive relations through `ascent!`.
 The reference enumerates nonempty walks and tracks their token sets, without
 using the production semiring operations or join scheduler. Each test compares
 every tuple and witness set on 83 graphs in both input orders: all directed
 two-node graphs including self-loops, all directed three-node graphs without
 self-loops, and diamond, cyclic-diamond, and duplicate-edge cases. Downstream
-relations are also checked, and evaluation has a timeout to catch nontermination.
+relations are also checked. The `ascent!` cases use its timeout option to
+catch nontermination.
 These are finite exhaustive families and targeted examples, not a proof for
 all recursive programs.
 
@@ -184,8 +204,8 @@ cargo +1.85.0 run -p ascent --example provenance_recursive_why
 
 The final clean verification passed:
 
-- `cargo +1.85.0 test --workspace`, including 15 provenance runtime tests,
-  three algebra tests, and all six compile-fail fixtures
+- `cargo +1.85.0 test --workspace`, including 17 provenance runtime tests,
+  three algebra tests, and all nine compile-fail fixtures
 - the focused provenance suites with `--no-default-features`
 - all 64 tests in the separately excluded `ascent_tests` crate in serial mode
   and all 64 again with its `par` feature

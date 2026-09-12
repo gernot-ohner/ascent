@@ -1,7 +1,7 @@
-use ascent::{WhyProvenance, ascent_provenance};
+use ascent::{WhyProvenance, ascent};
 
-ascent_provenance! {
-   semiring WhyProvenance<String>;
+ascent! {
+   #![provenance(WhyProvenance<String>)]
 
    struct CyclicReachability;
 

@@ -1,4 +1,4 @@
-error: empty-body fact rules are not supported by `ascent_provenance!`; add base facts as explicitly annotated relation rows
+error: empty-body fact rules are not supported with provenance; add base facts as explicitly annotated relation rows
  --> tests/ui/provenance/empty_body_fact.rs:6:4
   |
 6 |    input(1);
@@ -7,7 +7,7 @@ error: empty-body fact rules are not supported by `ascent_provenance!`; add base
 warning: unused import: `HowProvenance`
  --> tests/ui/provenance/empty_body_fact.rs:1:14
   |
-1 | use ascent::{HowProvenance, ascent_provenance};
+1 | use ascent::{HowProvenance, ascent};
   |              ^^^^^^^^^^^^^
   |
   = note: `#[warn(unused_imports)]` on by default

@@ -1,7 +1,7 @@
-use ascent::{HowProvenance, ascent_provenance};
+use ascent::{HowProvenance, ascent};
 
-ascent_provenance! {
-   semiring HowProvenance<String>;
+ascent! {
+   #![provenance(HowProvenance<String>)]
 
    struct Diamond;
 

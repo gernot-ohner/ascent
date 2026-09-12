@@ -1,0 +1,11 @@
+error: provenance is only supported in serial Ascent programs
+ --> tests/ui/provenance/parallel.rs:4:18
+  |
+4 |    #![provenance(ascent::WhyProvenance<String>)]
+  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: provenance is only supported in serial Ascent programs
+  --> tests/ui/provenance/parallel.rs:10:21
+   |
+10 |       #![provenance(ascent::WhyProvenance<String>)]
+   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

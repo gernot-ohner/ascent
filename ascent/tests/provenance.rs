@@ -1,9 +1,9 @@
 #![allow(clippy::field_reassign_with_default)]
 
-use ascent::{HowProvenance, ProvenanceSemiring, WhyProvenance, ascent_provenance};
+use ascent::{HowProvenance, ProvenanceSemiring, WhyProvenance, ascent, ascent_run};
 
-ascent_provenance! {
-   semiring HowProvenance<String>;
+ascent! {
+   #![provenance(HowProvenance<String>)]
 
    struct CopyProgram;
 
@@ -24,6 +24,25 @@ fn copy_rule_preserves_input_token() {
    assert_eq!(program.output, vec![(7, token)]);
 }
 
+#[test]
+fn ascent_run_provenance_normalizes_local_inputs() {
+   let rows = vec![
+      (1, HowProvenance::token("a".to_owned())),
+      (1, HowProvenance::token("a".to_owned())),
+      (2, HowProvenance::zero()),
+   ];
+   let program = ascent_run! {
+      #![provenance(HowProvenance<String>)]
+      relation input(i32) = rows;
+      relation output(i32);
+      output(x) <-- input(x);
+   };
+   assert_eq!(program.input.len(), 1);
+   assert_eq!(program.input[0].0, 1);
+   assert_eq!(program.input[0].1.to_string(), "2*a");
+   assert_eq!(program.output, program.input);
+}
+
 mod reusable_source {
    ascent::ascent_source! {
       copy:
@@ -33,8 +52,8 @@ mod reusable_source {
    }
 }
 
-ascent_provenance! {
-   semiring HowProvenance<String>;
+ascent! {
+   #![provenance(HowProvenance<String>)]
 
    struct IncludedSourceProgram;
 
@@ -69,8 +88,8 @@ impl ProvenanceSemiring for NaturalProvenance {
    fn multiply(&self, other: &Self) -> Self { Self(self.0 * other.0) }
 }
 
-ascent_provenance! {
-   semiring NaturalProvenance;
+ascent! {
+   #![provenance(NaturalProvenance)]
 
    struct CustomSemiringProgram;
 
@@ -95,8 +114,8 @@ fn macro_accepts_a_user_defined_semiring() {
    assert_eq!(program.output, vec![(1, NaturalProvenance(11))]);
 }
 
-ascent_provenance! {
-   semiring HowProvenance<String>;
+ascent! {
+   #![provenance(HowProvenance<String>)]
 
    struct DiamondProgram;
 
@@ -141,8 +160,8 @@ fn duplicate_inputs_are_coalesced_and_zero_inputs_are_discarded() {
    assert_eq!(program.output[0].1.to_string(), "2*x1");
 }
 
-ascent_provenance! {
-   semiring HowProvenance<String>;
+ascent! {
+   #![provenance(HowProvenance<String>)]
 
    struct ProjectionProgram;
 
@@ -165,8 +184,8 @@ fn projection_adds_annotations_from_distinct_source_tuples() {
    assert_eq!(program.projected[0].1.to_string(), "x1 + x2");
 }
 
-ascent_provenance! {
-   semiring HowProvenance<String>;
+ascent! {
+   #![provenance(HowProvenance<String>)]
 
    struct AlternativeRulesProgram;
 
@@ -190,8 +209,8 @@ fn alternative_rules_add_their_derivations() {
    assert_eq!(program.output[0].1.to_string(), "x1 + x2");
 }
 
-ascent_provenance! {
-   semiring HowProvenance<String>;
+ascent! {
+   #![provenance(HowProvenance<String>)]
 
    struct DuplicateRulesProgram;
 
@@ -213,8 +232,8 @@ fn duplicate_how_derivations_increase_coefficients() {
    assert_eq!(program.output[0].1.to_string(), "2*x1");
 }
 
-ascent_provenance! {
-   semiring WhyProvenance<String>;
+ascent! {
+   #![provenance(WhyProvenance<String>)]
 
    struct WhySemanticsProgram;
 
@@ -243,8 +262,8 @@ fn why_provenance_discards_coefficients_and_exponents_but_keeps_alternatives() {
    assert_eq!(program.self_join[0].1.to_string(), "{{x1}}");
 }
 
-ascent_provenance! {
-   semiring WhyProvenance<String>;
+ascent! {
+   #![provenance(WhyProvenance<String>)]
 
    struct RecursiveWhyProgram;
 
@@ -290,8 +309,8 @@ fn recursive_why_provenance_terminates_on_a_cycle() {
    assert_eq!(path_provenance(&program, 2, 2), "{{a,b}}");
 }
 
-ascent_provenance! {
-   semiring HowProvenance<String>;
+ascent! {
+   #![provenance(HowProvenance<String>)]
 
    struct ClauseFeaturesProgram;
 

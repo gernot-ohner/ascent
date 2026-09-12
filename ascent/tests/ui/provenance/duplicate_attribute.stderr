@@ -1,0 +1,5 @@
+error: duplicate provenance attribute
+ --> tests/ui/provenance/duplicate_attribute.rs:3:4
+  |
+3 |    #![provenance(ascent::WhyProvenance<String>)]
+  |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -4,7 +4,7 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::time::Duration;
 
-use ascent::{WhyProvenance, ascent_provenance};
+use ascent::{WhyProvenance, ascent, ascent_run};
 
 type Edge = (i32, i32, String);
 type Row = (i32, i32, WhyProvenance<String>);
@@ -78,8 +78,8 @@ fn check_graphs(evaluate: impl Fn(Vec<Row>) -> Vec<Vec<Row>>) {
    }
 }
 
-ascent_provenance! {
-   semiring WhyProvenance<String>;
+ascent! {
+   #![provenance(WhyProvenance<String>)]
    #![generate_run_timeout]
    struct Nonlinear;
    relation edge(i32, i32);
@@ -100,8 +100,8 @@ fn nonlinear_recursion_matches_walk_reference() {
    });
 }
 
-ascent_provenance! {
-   semiring WhyProvenance<String>;
+ascent! {
+   #![provenance(WhyProvenance<String>)]
    #![generate_run_timeout]
    struct Mutual;
    relation edge(i32, i32);
@@ -121,5 +121,19 @@ fn mutual_recursion_matches_walk_reference() {
       let mut program = Mutual { edge, ..Default::default() };
       assert!(program.run_timeout(Duration::from_secs(5)), "mutual recursion did not converge");
       vec![program.left, program.right, program.output]
+   });
+}
+
+#[test]
+fn ascent_run_nonlinear_recursion_matches_walk_reference() {
+   check_graphs(|edges| {
+      let program = ascent_run! {
+         #![provenance(WhyProvenance<String>)]
+         relation edge(i32, i32) = edges;
+         relation path(i32, i32);
+         path(x, y) <-- edge(x, y);
+         path(x, z) <-- path(x, y), path(y, z);
+      };
+      vec![program.path]
    });
 }

@@ -611,7 +611,18 @@ pub(crate) fn parse_ascent_program(
    input: ParseStream, ascent_macro_name: Path,
 ) -> Result<Either<AscentProgram, IncludeSourceMacroCall>> {
    let input_clone = input.cursor();
-   let attributes = Attribute::parse_inner(input)?;
+   let mut attributes = vec![];
+   let mut provenance_type = None;
+   for attribute in Attribute::parse_inner(input)? {
+      if attribute.path().is_ident("provenance") {
+         if provenance_type.is_some() {
+            return Err(Error::new_spanned(attribute, "duplicate provenance attribute"));
+         }
+         provenance_type = Some(attribute.parse_args::<Type>()?);
+      } else {
+         attributes.push(attribute);
+      }
+   }
    let mut struct_attrs = Attribute::parse_outer(input)?;
    let signatures = if input.peek(Token![pub]) || input.peek(Token![struct]) {
       let mut signatures = Signatures::parse(input)?;
@@ -656,7 +667,7 @@ pub(crate) fn parse_ascent_program(
          rules.push(RuleNode::parse(input)?);
       }
    }
-   Ok(Either::Left(AscentProgram { rules, relations, signatures, attributes, macros, provenance_type: None }))
+   Ok(Either::Left(AscentProgram { rules, relations, signatures, attributes, macros, provenance_type }))
 }
 
 impl Parse for AscentProgram {
@@ -1134,9 +1145,9 @@ fn rule_expand_macro_invocations(rule: RuleNode, macros: &HashMap<Ident, &MacroD
 fn validate_provenance_body_item(item: &BodyItemNode) -> Result<()> {
    match item {
       BodyItemNode::Agg(agg) =>
-         Err(Error::new(agg.agg_kw.span, "aggregation is not supported by `ascent_provenance!`")),
+         Err(Error::new(agg.agg_kw.span, "aggregation is not supported with provenance")),
       BodyItemNode::Negation(negation) =>
-         Err(Error::new(negation.neg_token.span, "negation is not supported by `ascent_provenance!`")),
+         Err(Error::new(negation.neg_token.span, "negation is not supported with provenance")),
       BodyItemNode::Disjunction(disjunction) => {
          for disjunct in &disjunction.disjuncts {
             for nested_item in disjunct {
@@ -1146,21 +1157,21 @@ fn validate_provenance_body_item(item: &BodyItemNode) -> Result<()> {
          Ok(())
       },
       BodyItemNode::MacroInvocation(invocation) =>
-         Err(Error::new(invocation.span(), "unexpanded rule macro in `ascent_provenance!`")),
+         Err(Error::new(invocation.span(), "unexpanded rule macro in a provenance program")),
       BodyItemNode::Clause(_) | BodyItemNode::Generator(_) | BodyItemNode::Cond(_) => Ok(()),
    }
 }
 
 fn validate_provenance_program(prog: &AscentProgram, rules: &[RuleNode]) -> Result<()> {
    if let Some(attribute) = prog.attributes.iter().find(|attribute| attribute.path().is_ident("ds")) {
-      return Err(Error::new_spanned(attribute, "BYODS attributes are not supported by `ascent_provenance!`"))
+      return Err(Error::new_spanned(attribute, "BYODS attributes are not supported with provenance"))
    }
    for relation in &prog.relations {
       if relation.kind.is_lattice() {
-         return Err(Error::new(relation.name.span(), "lattice relations are not supported by `ascent_provenance!`"))
+         return Err(Error::new(relation.name.span(), "lattice relations are not supported with provenance"))
       }
       if let Some(attribute) = relation.attrs.iter().find(|attribute| attribute.path().is_ident("ds")) {
-         return Err(Error::new_spanned(attribute, "BYODS attributes are not supported by `ascent_provenance!`"))
+         return Err(Error::new_spanned(attribute, "BYODS attributes are not supported with provenance"))
       }
    }
    for rule in rules {
@@ -1175,7 +1186,7 @@ fn validate_provenance_program(prog: &AscentProgram, rules: &[RuleNode]) -> Resu
             .unwrap_or_else(Span::call_site);
          return Err(Error::new(
             span,
-            "empty-body fact rules are not supported by `ascent_provenance!`; add base facts as explicitly annotated relation rows",
+            "empty-body fact rules are not supported with provenance; add base facts as explicitly annotated relation rows",
          ));
       }
       for body_item in &rule.body_items {

@@ -149,7 +149,8 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
       })
    }
 
-   let provenance_run_prelude = compile_provenance_run_prelude(mir);
+   let provenance_receiver = if is_ascent_run { quote! {_self} } else { quote! {self} };
+   let provenance_run_prelude = compile_provenance_run_prelude(mir, &provenance_receiver, !is_ascent_run);
 
    let par_usings = if mir.is_parallel {
       quote! {
@@ -229,11 +230,16 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
    let run_code = if !is_ascent_run {
       quote! {}
    } else {
+      let provenance_setup = mir.provenance_type.as_ref().map(|_| quote! {
+         #provenance_run_prelude
+         _self.update_indices_priv();
+      });
       quote! {
          macro_rules! __check_return_conditions {() => {};}
          #run_usings
          let _self = &mut __run_res;
          #(#relation_initializations)*
+         #provenance_setup
          #(#sccs_compiled)*
       }
    };
@@ -270,8 +276,9 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
    };
    let rule_time_fields = if mir.config.include_rule_times { rule_time_fields } else { vec![] };
    let rule_time_fields_defaults = if mir.config.include_rule_times { rule_time_fields_defaults } else { vec![] };
-   let provenance_state_field = mir.provenance_type.as_ref().map(|_| quote! { __provenance_has_run: bool, });
-   let provenance_state_default = mir.provenance_type.as_ref().map(|_| quote! { __provenance_has_run: false, });
+   let needs_run_guard = mir.provenance_type.is_some() && !is_ascent_run;
+   let provenance_state_field = needs_run_guard.then(|| quote! { __provenance_has_run: bool, });
+   let provenance_state_default = needs_run_guard.then(|| quote! { __provenance_has_run: false, });
    let public_update_indices = if mir.provenance_type.is_none() {
       quote! {
          #[deprecated = "Explicit call to update_indices not required anymore."]
@@ -482,7 +489,7 @@ fn rule_time_field_name(scc_ind: usize, rule_ind: usize) -> Ident {
    Ident::new(&format!("rule{}_{}_duration", scc_ind, rule_ind), Span::call_site())
 }
 
-fn compile_provenance_run_prelude(mir: &AscentMir) -> TokenStream {
+fn compile_provenance_run_prelude(mir: &AscentMir, receiver: &TokenStream, check_run: bool) -> TokenStream {
    let Some(provenance_type) = &mir.provenance_type else { return quote! {} };
    let mut coalesce_relations = vec![];
    for relation in mir
@@ -505,10 +512,10 @@ fn compile_provenance_run_prelude(mir: &AscentMir) -> TokenStream {
       coalesce_relations.push(quote! {
          {
             let mut __coalesced_rows: ::std::vec::Vec<#row_type> =
-               ::std::vec::Vec::with_capacity(self.#relation_name.len());
+               ::std::vec::Vec::with_capacity(#receiver.#relation_name.len());
             let mut __coalesced_indices: ::ascent::hashbrown::HashMap<#key_type, usize> =
-               ::ascent::hashbrown::HashMap::with_capacity(self.#relation_name.len());
-            for __row in ::std::mem::take(&mut self.#relation_name) {
+               ::ascent::hashbrown::HashMap::with_capacity(#receiver.#relation_name.len());
+            for __row in ::std::mem::take(&mut #receiver.#relation_name) {
                if __row.#provenance_index == <#provenance_type as ::ascent::ProvenanceSemiring>::zero() {
                   continue;
                }
@@ -526,14 +533,17 @@ fn compile_provenance_run_prelude(mir: &AscentMir) -> TokenStream {
             __coalesced_rows.retain(|__row| {
                __row.#provenance_index != <#provenance_type as ::ascent::ProvenanceSemiring>::zero()
             });
-            self.#relation_name = __coalesced_rows;
+            #receiver.#relation_name = __coalesced_rows;
          }
       });
    }
-   quote! {
-      if ::std::mem::replace(&mut self.__provenance_has_run, true) {
-         panic!("`run()` may only be called once on an `ascent_provenance!` program");
+   let run_guard = check_run.then(|| quote! {
+      if ::std::mem::replace(&mut #receiver.__provenance_has_run, true) {
+         panic!("`run()` may only be called once on a provenance program");
       }
+   });
+   quote! {
+      #run_guard
       #(#coalesce_relations)*
    }
 }
