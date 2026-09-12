@@ -126,6 +126,7 @@ pub struct RelationNode {
    pub initialization: Option<Expr>,
    pub _semi_colon: Token![;],
    pub is_lattice: bool,
+   pub is_provenance: bool,
 }
 
 impl Parse for RelationNode {
@@ -151,7 +152,15 @@ impl Parse for RelationNode {
       if is_lattice && field_types.empty_or_trailing() {
          return Err(input.error("empty lattice is not allowed"));
       }
-      Ok(RelationNode { attrs: vec![], name, field_types, _semi_colon, is_lattice, initialization })
+      Ok(RelationNode {
+         attrs: vec![],
+         name,
+         field_types,
+         _semi_colon,
+         is_lattice,
+         is_provenance: false,
+         initialization,
+      })
    }
 }
 
@@ -737,7 +746,7 @@ fn rule_desugar_disjunction_nodes(rule: RuleNode) -> Vec<RuleNode> {
    res
 }
 
-fn body_item_get_bound_vars(bi: &BodyItemNode) -> Vec<Ident> {
+pub(crate) fn body_item_get_bound_vars(bi: &BodyItemNode) -> Vec<Ident> {
    match bi {
       BodyItemNode::Generator(gen) => pattern_get_vars(&gen.pattern),
       BodyItemNode::Agg(agg) => pattern_get_vars(&agg.pat),
@@ -1116,14 +1125,18 @@ fn rule_expand_macro_invocations(rule: RuleNode, macros: &HashMap<Ident, &MacroD
    Ok(RuleNode { body_items: new_body_items, head_clauses: new_head_items })
 }
 
-pub(crate) fn desugar_ascent_program(mut prog: AscentProgram) -> Result<AscentProgram> {
+pub(crate) fn desugar_ascent_program(mut prog: AscentProgram, is_parallel: bool) -> Result<AscentProgram> {
    let macros = prog.macros.iter().map(|m| (m.name.clone(), m)).collect::<HashMap<_, _>>();
    let rules_macro_expanded =
       prog.rules.into_iter().map(|r| rule_expand_macro_invocations(r, &macros)).collect::<Result<Vec<_>>>()?;
 
-   prog.rules = rules_macro_expanded
+   prog.rules = rules_macro_expanded.into_iter().flat_map(rule_desugar_disjunction_nodes).collect_vec();
+
+   crate::why_provenance::lower_why_provenance(&mut prog, is_parallel)?;
+
+   prog.rules = prog
+      .rules
       .into_iter()
-      .flat_map(rule_desugar_disjunction_nodes)
       .map(rule_desugar_pattern_args)
       .map(rule_desugar_wildcards)
       .map(rule_desugar_negation)

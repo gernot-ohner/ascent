@@ -8,6 +8,7 @@ mod ascent_codegen;
 mod ascent_syntax;
 mod test_errors;
 mod syn_utils;
+mod why_provenance;
 
 #[macro_use]
 extern crate quote;
@@ -237,7 +238,7 @@ pub(crate) fn ascent_impl(input: proc_macro2::TokenStream, kind: AscentMacroKind
       Either::Right(include_source_call) => return Ok(include_source_call.macro_call_output()),
    };
 
-   let prog = desugar_ascent_program(prog)?;
+   let prog = desugar_ascent_program(prog, is_parallel)?;
 
    let hir = compile_ascent_program_to_hir(&prog, is_parallel)?;
 

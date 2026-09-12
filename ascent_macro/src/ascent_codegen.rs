@@ -763,6 +763,42 @@ fn compile_update_indices_function_body(mir: &AscentMir) -> proc_macro2::TokenSt
          });
       }
       let rel_name = &r.name;
+      let provenance_normalization = if mir.relations_metadata[r].is_provenance {
+         let row_type = tuple_type(&r.field_types);
+         let annotation_index = syn::Index::from(r.field_types.len() - 1);
+         let logical_indices = (0..r.field_types.len() - 1).map(syn::Index::from).collect_vec();
+         let existing_ident = Ident::new("__provenance_existing", Span::mixed_site());
+         let tuple_ident = Ident::new("__provenance_tuple", Span::mixed_site());
+         let key_matches = if logical_indices.is_empty() {
+            quote! { true }
+         } else {
+            let comparisons =
+               logical_indices.iter().map(|index| quote! { #existing_ident.#index == #tuple_ident.#index });
+            quote! { #(#comparisons)&&* }
+         };
+         let index_names = indices_set.iter().map(|index| index.ir_name()).collect_vec();
+         quote_spanned! {r.name.span()=>
+            let mut __normalized: ::std::vec::Vec<#row_type> =
+               ::std::vec::Vec::with_capacity(#_self.#rel_name.len());
+            for #tuple_ident in ::std::mem::take(&mut #_self.#rel_name) {
+               if #tuple_ident.#annotation_index.witnesses().is_empty() {
+                  continue;
+               }
+               if let Some(#existing_ident) = __normalized.iter_mut().find(|#existing_ident| #key_matches) {
+                  ::ascent::Lattice::join_mut(
+                     &mut #existing_ident.#annotation_index,
+                     #tuple_ident.#annotation_index,
+                  );
+               } else {
+                  __normalized.push(#tuple_ident);
+               }
+            }
+            #_self.#rel_name = __normalized;
+            #(#_self.#index_names = ::std::default::Default::default();)*
+         }
+      } else {
+         quote! {}
+      };
       let maybe_lock = if r.is_lattice && mir.is_parallel {
          quote_spanned! {r.name.span()=> let tuple = tuple.read().unwrap(); }
       } else {
@@ -770,6 +806,7 @@ fn compile_update_indices_function_body(mir: &AscentMir) -> proc_macro2::TokenSt
       };
       if !par {
          res.push(quote_spanned! {r.name.span()=>
+            #provenance_normalization
             for (_i, tuple) in #_self.#rel_name.iter().enumerate() {
                #maybe_lock
                #(#update_indices)*

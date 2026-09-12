@@ -96,6 +96,7 @@ pub(crate) struct RelationMetadata {
    pub attributes: Rc<Vec<Attribute>>,
    /// Will be `Some()` iff the relation is not a lattice
    pub ds_attr: Option<DsAttributeContents>,
+   pub is_provenance: bool,
 }
 
 pub(crate) struct IrRule {
@@ -274,6 +275,7 @@ pub(crate) fn compile_ascent_program_to_hir(prog: &AscentProgram, is_parallel: b
                .collect_vec(),
          ),
          ds_attr,
+         is_provenance: rel.is_provenance,
       });
    }
    for (ir_rule, extra_relations) in ir_rules.iter() {
