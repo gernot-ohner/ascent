@@ -109,6 +109,31 @@ fn annotated_copy_normalizes_inputs_and_reruns_idempotently() {
 }
 
 #[test]
+fn named_program_default_normalizes_annotated_initializers() {
+   ascent! {
+      struct Initialized;
+      #[provenance(&'static str)] relation input(i32) = vec![
+         (1, WhyProvenance::token("a")),
+         (1, WhyProvenance::token("b")),
+         (2, WhyProvenance::default()),
+      ];
+      #[provenance(&'static str)] relation output(i32);
+
+      output(x) <-- input(x);
+   }
+
+   let mut program = Initialized::default();
+   assert_eq!(program.input.len(), 1);
+   assert_eq!(program.input[0].0, 1);
+   assert_eq!(program.input[0].1.witnesses(), &BTreeSet::from([BTreeSet::from(["a"]), BTreeSet::from(["b"])]));
+
+   program.run();
+   assert_eq!(program.output.len(), 1);
+   assert_eq!(program.output[0].0, 1);
+   assert_eq!(program.output[0].1.witnesses(), &BTreeSet::from([BTreeSet::from(["a"]), BTreeSet::from(["b"])]));
+}
+
+#[test]
 fn inline_execution_supports_identity_and_join_products() {
    let result = ascent_run! {
       #[provenance(&'static str)] relation left(i32) = vec![(1, WhyProvenance::token("l"))];
