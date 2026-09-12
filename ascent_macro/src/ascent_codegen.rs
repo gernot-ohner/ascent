@@ -128,7 +128,7 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
       });
       if mir.sccs.iter().any(|scc| scc.is_looping) {
          type_constraints.push(quote! {
-            fn __convergent_provenance_semiring_constraint<T: ::ascent::ConvergentProvenanceSemiring>() {}
+            fn __convergent_provenance_semiring_constraint<T: ::ascent::IdempotentConvergentProvenanceSemiring>() {}
             __convergent_provenance_semiring_constraint::<#provenance_type>();
          });
       }

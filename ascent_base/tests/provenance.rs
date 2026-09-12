@@ -1,4 +1,4 @@
-use ascent_base::{ConvergentProvenanceSemiring, HowProvenance, ProvenanceSemiring, WhyProvenance};
+use ascent_base::{HowProvenance, IdempotentConvergentProvenanceSemiring, ProvenanceSemiring, WhyProvenance};
 
 fn token_how(name: &str) -> HowProvenance<String> { HowProvenance::token(name.to_owned()) }
 
@@ -9,7 +9,7 @@ fn add<S: ProvenanceSemiring>(mut left: S, right: &S) -> S {
    left
 }
 
-fn assert_convergent<S: ConvergentProvenanceSemiring>() {}
+fn assert_convergent<S: IdempotentConvergentProvenanceSemiring>() {}
 
 #[test]
 fn how_provenance_obeys_identities_and_reports_changes() {

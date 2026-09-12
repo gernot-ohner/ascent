@@ -31,7 +31,11 @@ pub trait ProvenanceSemiring: Clone + Eq {
 /// terminate. The evaluator re-enqueues a changed tuple with its full
 /// accumulated annotation, so idempotence is required to avoid recounting old
 /// derivations.
-pub trait ConvergentProvenanceSemiring: ProvenanceSemiring {}
+///
+/// This guarantees annotation convergence, not a finite number of logical
+/// tuples: recursive Rust expressions or generators can still create an
+/// unbounded relation.
+pub trait IdempotentConvergentProvenanceSemiring: ProvenanceSemiring {}
 
 /// Canonical polynomials over tokens in `N[X]`.
 ///
@@ -192,7 +196,7 @@ where T: Clone + Ord
    }
 }
 
-impl<T> ConvergentProvenanceSemiring for WhyProvenance<T> where T: Clone + Ord {}
+impl<T> IdempotentConvergentProvenanceSemiring for WhyProvenance<T> where T: Clone + Ord {}
 
 impl<T> Debug for WhyProvenance<T>
 where T: Debug

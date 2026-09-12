@@ -50,14 +50,14 @@ trait ProvenanceSemiring: Clone + Eq {
    fn multiply(&self, other: &Self) -> Self;
 }
 
-trait ConvergentProvenanceSemiring: ProvenanceSemiring {}
+trait IdempotentConvergentProvenanceSemiring: ProvenanceSemiring {}
 ```
 
 `add_assign` reports whether an annotation genuinely changed. The evaluator
 uses that result to decide whether a tuple must be scheduled again. Although
 Rust cannot encode the algebraic laws in a trait bound, implementations used by
 the macro must behave as commutative semirings. Implementations of
-`ConvergentProvenanceSemiring` must additionally have idempotent addition and
+`IdempotentConvergentProvenanceSemiring` must additionally have idempotent addition and
 terminating ascending chains for finite inputs. Idempotence is necessary
 because the recursive scheduler reprocesses the tuple's full accumulated
 annotation after a change.
@@ -89,9 +89,12 @@ minimal-witness simplification, so both `{x1}` and `{x1,x2}` remain visible if
 both are derivable. Coefficient and exponent distinctions disappear because
 both outer and inner containers are sets.
 
-Only `WhyProvenance<T>` implements `ConvergentProvenanceSemiring`. With a finite
+Only `WhyProvenance<T>` implements `IdempotentConvergentProvenanceSemiring`. With a finite
 input token universe there are finitely many witness sets, so recursive
 evaluation reaches a fixed point even for cyclic graphs.
+This assumes the rules generate finitely many logical tuples. Rust expressions
+and generators can still create unbounded relations; the marker constrains
+annotation growth only.
 
 ## Compiler and evaluator architecture
 
@@ -117,7 +120,7 @@ tuple.
 
 The compiler emits a `ProvenanceSemiring` type check for all provenance
 programs. If any strongly connected component is recursive, it additionally
-emits a `ConvergentProvenanceSemiring` check. Consequently, a recursive program
+emits an `IdempotentConvergentProvenanceSemiring` check. Consequently, a recursive program
 using `HowProvenance` fails at compile time instead of running with incorrect
 finite-polynomial semantics.
 
@@ -161,6 +164,17 @@ input normalization, the diamond polynomial, supported Rust clauses, recursive
 acyclic and cyclic why-provenance, and the one-run guard. Six compile-fail
 fixtures pin every explicit rejection category.
 
+Two reference-based tests additionally check nonlinear recursion
+(`path(x,z) <-- path(x,y), path(y,z)`) and mutually recursive relations.
+The reference enumerates nonempty walks and tracks their token sets, without
+using the production semiring operations or join scheduler. Each test compares
+every tuple and witness set on 83 graphs in both input orders: all directed
+two-node graphs including self-loops, all directed three-node graphs without
+self-loops, and diamond, cyclic-diamond, and duplicate-edge cases. Downstream
+relations are also checked, and evaluation has a timeout to catch nontermination.
+These are finite exhaustive families and targeted examples, not a proof for
+all recursive programs.
+
 The runnable examples are:
 
 ```text
@@ -170,7 +184,7 @@ cargo +1.85.0 run -p ascent --example provenance_recursive_why
 
 The final clean verification passed:
 
-- `cargo +1.85.0 test --workspace`, including 13 provenance runtime tests,
+- `cargo +1.85.0 test --workspace`, including 15 provenance runtime tests,
   three algebra tests, and all six compile-fail fixtures
 - the focused provenance suites with `--no-default-features`
 - all 64 tests in the separately excluded `ascent_tests` crate in serial mode

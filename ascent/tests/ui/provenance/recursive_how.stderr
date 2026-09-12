@@ -1,10 +1,10 @@
-error[E0277]: the trait bound `HowProvenance<String>: ConvergentProvenanceSemiring` is not satisfied
+error[E0277]: the trait bound `HowProvenance<String>: IdempotentConvergentProvenanceSemiring` is not satisfied
  --> tests/ui/provenance/recursive_how.rs:4:13
   |
 4 |    semiring HowProvenance<String>;
-  |             ^^^^^^^^^^^^^^^^^^^^^ the trait `ConvergentProvenanceSemiring` is not implemented for `HowProvenance<String>`
+  |             ^^^^^^^^^^^^^^^^^^^^^ the trait `IdempotentConvergentProvenanceSemiring` is not implemented for `HowProvenance<String>`
   |
-  = help: the trait `ConvergentProvenanceSemiring` is implemented for `WhyProvenance<T>`
+  = help: the trait `IdempotentConvergentProvenanceSemiring` is implemented for `WhyProvenance<T>`
 note: required by a bound in `__convergent_provenance_semiring_constraint`
  --> tests/ui/provenance/recursive_how.rs:3:1
   |
