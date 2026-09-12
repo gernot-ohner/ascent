@@ -272,12 +272,15 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
    let rule_time_fields_defaults = if mir.config.include_rule_times { rule_time_fields_defaults } else { vec![] };
    let provenance_state_field = mir.provenance_type.as_ref().map(|_| quote! { __provenance_has_run: bool, });
    let provenance_state_default = mir.provenance_type.as_ref().map(|_| quote! { __provenance_has_run: false, });
-   let public_update_indices_body = if mir.provenance_type.is_some() {
+   let public_update_indices = if mir.provenance_type.is_none() {
       quote! {
-         panic!("`update_indices()` is not supported on an `ascent_provenance!` program; populate annotated relation rows and call `run()` directly");
+         #[deprecated = "Explicit call to update_indices not required anymore."]
+         pub fn update_indices(&mut self) {
+            self.update_indices_priv();
+         }
       }
    } else {
-      quote! { self.update_indices_priv(); }
+      quote! {}
    };
 
    let mut rel_codegens = vec![];
@@ -315,10 +318,7 @@ pub(crate) fn compile_mir(mir: &AscentMir, is_ascent_run: bool) -> proc_macro2::
             self.update_indices_duration += before.elapsed();
          }
 
-         #[deprecated = "Explicit call to update_indices not required anymore."]
-         pub fn update_indices(&mut self) {
-            #public_update_indices_body
-         }
+         #public_update_indices
          fn type_constraints() {
             #![allow(clippy::all)]
             #(#type_constraints)*
@@ -991,7 +991,7 @@ fn compile_mir_rule_inner(
          } else {
             #rule_cp2_compiled
          }
-      }
+      };
    }
    if clause_ind < rule.body_items.len() {
       let bitem = &rule.body_items[clause_ind];

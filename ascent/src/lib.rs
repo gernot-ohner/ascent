@@ -27,14 +27,13 @@ mod tuple_of_borrowed;
 mod rel_index_boilerplate;
 
 pub use ascent_base::*;
-pub use ascent_macro::{ascent, ascent_provenance, ascent_provenance_par, ascent_run, ascent_source};
+pub use ascent_macro::{ascent, ascent_provenance, ascent_run, ascent_source};
 #[cfg(feature = "par")]
 pub use ascent_macro::{ascent_par, ascent_run_par};
-pub use boxcar;
 #[cfg(feature = "par")]
 pub use dashmap;
-pub use hashbrown;
 #[cfg(feature = "par")]
 pub use rayon;
+pub use {boxcar, hashbrown};
 #[cfg(test)]
 use trybuild as _;

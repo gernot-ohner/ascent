@@ -61,11 +61,11 @@ impl AscentConfig {
             return Err(Error::new_spanned(
                attr,
                format!("unrecognized attribute. recognized attributes are: {recognized_attrs}"),
-            ))
+            ));
          }
       }
       if inter_rule_parallelism.is_some() && !is_parallel {
-         return Err(Error::new_spanned(inter_rule_parallelism, "attribute only allowed in parallel Ascent"))
+         return Err(Error::new_spanned(inter_rule_parallelism, "attribute only allowed in parallel Ascent"));
       }
       let default_ds = get_ds_attr(&attrs)?
          .unwrap_or_else(|| DsAttributeContents { path: parse_quote! {::ascent::rel}, args: TokenStream::default() });
@@ -333,7 +333,7 @@ fn compile_rule_to_ir_rule(rule: &RuleNode, prog: &AscentProgram) -> syn::Result
             let other_err = Error::new(other_var.span(), "variable being shadowed");
             let mut err = Error::new(v.span(), format!("`{v}` shadows another variable with the same name"));
             err.combine(other_err);
-            return Err(err)
+            return Err(err);
          }
          grounded_vars.push(v);
       }
@@ -365,7 +365,7 @@ fn compile_rule_to_ir_rule(rule: &RuleNode, prog: &AscentProgram) -> syn::Result
                   let expr_idents = expr_get_vars(cond_expr);
                   if !expr_idents.iter().all(|v| self_vars.contains(v)) {
                      first_two_clauses_simple = false;
-                     break
+                     break;
                   }
                   self_vars.extend(cond_cl.bound_vars());
                }
@@ -420,10 +420,10 @@ fn compile_rule_to_ir_rule(rule: &RuleNode, prog: &AscentProgram) -> syn::Result
                .enumerate()
                .filter(|(_i, expr)| {
                   if is_wild_card(expr) {
-                     return false
+                     return false;
                   } else if let Some(ident) = expr_to_ident(expr) {
                      if agg.bound_args.iter().contains(&ident) {
-                        return false
+                        return false;
                      }
                   }
                   true

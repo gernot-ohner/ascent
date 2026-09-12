@@ -2,13 +2,6 @@
 
 ## Scope for review
 
-This is the scope message for Gernot to send to Sun:
-
-> I plan to prototype generic provenance semirings for serial, positive Ascent.
-> The first version will support how- and why-provenance for nonrecursive rules,
-> then recursive why-provenance. Recursive how-provenance will be left as the
-> formal-power-series research boundary. Does that match what you had in mind?
-
 This branch is a research prototype for evaluating that design. It is not an
 upstream-ready proposal. The target is a small, correct implementation with an
 isolated API, executable examples, explicit semantic boundaries, and no
@@ -74,7 +67,7 @@ tuples are combined with semiring addition and zero-annotated rows are removed.
 The generated program rejects a second call to `run()` or `run_timeout()`.
 This is deliberately stricter than ordinary Ascent because a second batch run
 would double-count how-provenance without a provenance-aware incremental
-maintenance model. It also rejects the deprecated public `update_indices()`
+maintenance model. It omits the deprecated public `update_indices()`
 method because indexing unnormalized provenance rows before `run()` would leave
 stale row references after coalescing.
 
@@ -137,9 +130,9 @@ provenance variables or rewritten relation arities.
 
 The macro produces focused compile errors for negation, aggregation, lattice
 relations, Bring Your Own Data Structures (BYODS) attributes, empty-body fact
-rules, and recursive use of a nonconvergent semiring. The intentionally present
-`ascent_provenance_par!` entry point always reports that parallel provenance is
-unsupported. Base facts must be supplied as annotated relation rows.
+rules, and recursive use of a nonconvergent semiring. Provenance evaluation is
+serial; no parallel provenance macro is provided. Base facts must be supplied
+as annotated relation rows.
 
 ## Why recursive how-provenance stops here
 
@@ -165,7 +158,7 @@ point semantics.
 The focused suite covers semiring identities and laws, copy, join, projection,
 alternative rules, duplicate derivations, why-provenance collapsing behavior,
 input normalization, the diamond polynomial, supported Rust clauses, recursive
-acyclic and cyclic why-provenance, and the one-run guard. Seven compile-fail
+acyclic and cyclic why-provenance, and the one-run guard. Six compile-fail
 fixtures pin every explicit rejection category.
 
 The runnable examples are:
@@ -177,8 +170,8 @@ cargo +1.85.0 run -p ascent --example provenance_recursive_why
 
 The final clean verification passed:
 
-- `cargo +1.85.0 test --workspace`, including 14 provenance runtime tests,
-  three algebra tests, and all seven compile-fail fixtures
+- `cargo +1.85.0 test --workspace`, including 13 provenance runtime tests,
+  three algebra tests, and all six compile-fail fixtures
 - the focused provenance suites with `--no-default-features`
 - all 64 tests in the separately excluded `ascent_tests` crate in serial mode
   and all 64 again with its `par` feature

@@ -66,14 +66,6 @@ mod provenance_kw {
 #[proc_macro]
 pub fn ascent_provenance(input: TokenStream) -> TokenStream { ascent_provenance_impl(input.into()).into_token_stream() }
 
-/// Provenance evaluation is serial-only in the prototype.
-#[proc_macro]
-pub fn ascent_provenance_par(_input: TokenStream) -> TokenStream {
-   syn::Error::new(Span::call_site(), "parallel provenance programs are not supported; use `ascent_provenance!`")
-      .into_compile_error()
-      .into()
-}
-
 fn ascent_provenance_impl(input: proc_macro2::TokenStream) -> Result<proc_macro2::TokenStream> {
    #[derive(Parse)]
    struct ProvenanceInput {

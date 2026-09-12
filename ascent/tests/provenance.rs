@@ -346,12 +346,3 @@ fn provenance_program_rejects_a_second_run() {
    program.run();
    program.run();
 }
-
-#[test]
-#[allow(deprecated)]
-#[should_panic(expected = "`update_indices()` is not supported")]
-fn provenance_program_rejects_manual_index_updates() {
-   let mut program = CopyProgram::default();
-   program.input = vec![(7, HowProvenance::token("x".to_owned()))];
-   program.update_indices();
-}
