@@ -1,0 +1,5 @@
+error: empty-body fact rules cannot have an annotated head; initialize the relation with tagged rows
+ --> tests/ui/why_provenance/annotated_fact.rs:7:4
+  |
+7 |    output(1);
+  |    ^^^^^^

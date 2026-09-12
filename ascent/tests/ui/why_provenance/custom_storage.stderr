@@ -1,0 +1,5 @@
+error: annotated relations cannot have custom data structure providers
+ --> tests/ui/why_provenance/custom_storage.rs:5:4
+  |
+5 |    #[ds(ascent::rel)]
+  |    ^^^^^^^^^^^^^^^^^^

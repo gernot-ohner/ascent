@@ -1,0 +1,5 @@
+error: wrong arity for relation `input` (expected 1, found 2)
+ --> tests/ui/why_provenance/original_logical_arity.rs:7:18
+  |
+7 |    output(x) <-- input(x, extra);
+  |                  ^^^^^

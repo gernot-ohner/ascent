@@ -1,0 +1,5 @@
+error: expected exactly one token type in `#[provenance(TokenType)]`
+ --> tests/ui/why_provenance/malformed_annotation_arguments.rs:4:4
+  |
+4 |    #[provenance(u32, u64)]
+  |    ^^^^^^^^^^^^^^^^^^^^^^^

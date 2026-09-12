@@ -1,0 +1,5 @@
+error: rules with an annotated head cannot use aggregation or negation
+ --> tests/ui/why_provenance/annotated_negation.rs:7:29
+  |
+7 |    output(x) <-- input(x), !input(x);
+  |                             ^^^^^

@@ -1,0 +1,5 @@
+error: multiple `provenance` attributes specified
+ --> tests/ui/why_provenance/duplicate_annotation.rs:5:4
+  |
+5 |    #[provenance(&'static str)]
+  |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^

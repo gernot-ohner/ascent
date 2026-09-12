@@ -1,0 +1,5 @@
+error: `provenance` cannot be applied to a user-declared `lattice`
+ --> tests/ui/why_provenance/annotated_lattice.rs:4:4
+  |
+4 |    #[provenance(&'static str)]
+  |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
