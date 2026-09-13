@@ -9,16 +9,6 @@ use cfg_if::cfg_if;
 use rustc_hash::FxHasher;
 pub use web_time::Instant;
 
-#[doc(hidden)]
-pub fn why_provenance_one<T: Clone + Ord>() -> ascent_base::WhyProvenance<T> { ascent_base::WhyProvenance::__one() }
-
-#[doc(hidden)]
-pub fn why_provenance_product<T: Clone + Ord>(
-   left: &ascent_base::WhyProvenance<T>, right: &ascent_base::WhyProvenance<T>,
-) -> ascent_base::WhyProvenance<T> {
-   left.__product(right)
-}
-
 pub use crate::convert::*;
 pub use crate::rel_index_read::{RelIndexCombined, RelIndexRead, RelIndexReadAll};
 

@@ -51,6 +51,16 @@ use crate::ascent_mir::compile_hir_to_mir;
 /// ```
 /// this macro creates a type named `AscentProgram` that can be instantiated using `AscentProgram::default()`.
 /// The type has a `run()` method, which runs the computation to a fixed point.
+///
+/// Relations annotated with `#[provenance(TokenType)]` carry why-provenance.
+/// Tracked inputs and outputs of a rule must use the same token type:
+/// ```compile_fail,E0308
+/// ascent::ascent! {
+///    #[provenance(&'static str)] relation input(i32);
+///    #[provenance(u32)] relation output(i32);
+///    output(x) <-- input(x);
+/// }
+/// ```
 #[proc_macro]
 pub fn ascent(input: TokenStream) -> TokenStream {
    ascent_impl(input.into(), AscentMacroKind { is_ascent_run: false, is_parallel: false }).into_token_stream()

@@ -33,6 +33,11 @@ fn provenance_attribute_validation_errors_are_source_level() {
       "expected `#[provenance(TokenType)]`",
    );
    assert_ascent_error(
+      quote! { #[provenance(u32, u64)] relation input(i32); },
+      AscentMacroKind::default(),
+      "expected exactly one token type",
+   );
+   assert_ascent_error(
       quote! {
          #[provenance(&'static str)]
          #[provenance(&'static str)]
@@ -51,11 +56,13 @@ fn provenance_attribute_validation_errors_are_source_level() {
       AscentMacroKind::default(),
       "custom data structure providers",
    );
-   assert_ascent_error(
-      quote! { #[provenance(&'static str)] relation input(i32); },
-      AscentMacroKind { is_ascent_run: false, is_parallel: true },
-      "only supported by serial Ascent",
-   );
+   for is_ascent_run in [false, true] {
+      assert_ascent_error(
+         quote! { #[provenance(&'static str)] relation input(i32); },
+         AscentMacroKind { is_ascent_run, is_parallel: true },
+         "only supported by serial Ascent",
+      );
+   }
 }
 
 #[test]
@@ -64,8 +71,9 @@ fn provenance_restrictions_are_checked_after_macro_and_disjunction_expansion() {
       quote! {
          #[provenance(&'static str)] relation input(i32);
          #[provenance(&'static str)] relation output(i32);
+         relation ordinary(i32);
          macro aggregate($x: ident) { agg $x = ascent::aggregators::min(v) in input(v) }
-         output(x) <-- (aggregate!(x) | input(x));
+         ordinary(x), output(x) <-- (aggregate!(x) | input(x));
       },
       AscentMacroKind::default(),
       "cannot use aggregation or negation",
@@ -74,7 +82,8 @@ fn provenance_restrictions_are_checked_after_macro_and_disjunction_expansion() {
       quote! {
          #[provenance(&'static str)] relation input(i32);
          #[provenance(&'static str)] relation output(i32);
-         output(x) <-- input(x), !input(0);
+         relation ordinary(i32);
+         ordinary(x), output(x) <-- input(x), !input(0);
       },
       AscentMacroKind::default(),
       "cannot use aggregation or negation",
@@ -96,5 +105,13 @@ fn provenance_arity_diagnostics_keep_logical_arity() {
       },
       AscentMacroKind::default(),
       "expected 1, found 2",
+   );
+   assert_ascent_error(
+      quote! {
+         #[provenance(u32)] relation output(i32);
+         output(x) <-- missing(x);
+      },
+      AscentMacroKind::default(),
+      "relation `missing` is not defined",
    );
 }

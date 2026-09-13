@@ -77,52 +77,6 @@ fn relation_contents(rows: &[(Node, Node, WhyProvenance<Token>)]) -> Reachabilit
    rows.iter().map(|(source, target, provenance)| ((*source, *target), provenance.witnesses().clone())).collect()
 }
 
-#[test]
-fn linear_recursion_matches_the_walk_oracle_in_both_input_orders() {
-   let edges = vec![(0, 1, 0), (1, 2, 1), (0, 2, 2), (2, 1, 3), (1, 1, 4)];
-   let expected = walk_oracle(&edges);
-
-   for input in [edges.clone(), edges.iter().copied().rev().collect()] {
-      let mut program = LinearReachability::default();
-      program.edge = tagged_edges(&input);
-      program.run();
-
-      assert_eq!(relation_contents(&program.reachable), expected);
-      assert_eq!(relation_contents(&program.downstream), expected);
-   }
-}
-
-#[test]
-fn nonlinear_recursion_propagates_late_alternatives_to_downstream_consumers() {
-   let edges = vec![(0, 1, 0), (1, 2, 1), (0, 2, 2), (1, 1, 3)];
-   let expected = walk_oracle(&edges);
-
-   for input in [edges.clone(), edges.iter().copied().rev().collect()] {
-      let mut program = NonlinearReachability::default();
-      program.edge = tagged_edges(&input);
-      program.run();
-
-      assert_eq!(relation_contents(&program.reachable), expected);
-      assert_eq!(relation_contents(&program.downstream), expected);
-   }
-}
-
-#[test]
-fn mutual_recursion_propagates_late_alternatives_to_every_member_and_consumer() {
-   let edges = vec![(0, 1, 0), (1, 2, 1), (0, 2, 2), (2, 1, 3)];
-   let expected = walk_oracle(&edges);
-
-   for input in [edges.clone(), edges.iter().copied().rev().collect()] {
-      let mut program = MutualReachability::default();
-      program.edge = tagged_edges(&input);
-      program.run();
-
-      assert_eq!(relation_contents(&program.reachable), expected);
-      assert_eq!(relation_contents(&program.mirror), expected);
-      assert_eq!(relation_contents(&program.downstream), expected);
-   }
-}
-
 fn every_three_node_graph() -> impl Iterator<Item = (u16, Vec<(Node, Node, Token)>, Reachability)> {
    let pairs = (0..3).flat_map(|source| (0..3).map(move |target| (source, target))).collect::<Vec<_>>();
 

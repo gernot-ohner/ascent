@@ -1,5 +1,0 @@
-error: rules with an annotated head cannot use aggregation or negation
- --> tests/ui/why_provenance/annotated_aggregation.rs:8:31
-  |
-8 |    ordinary(n), output(n) <-- agg n = count() in input(_);
-  |                               ^^^

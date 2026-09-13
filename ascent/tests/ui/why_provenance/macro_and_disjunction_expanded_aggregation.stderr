@@ -1,5 +1,0 @@
-error: rules with an annotated head cannot use aggregation or negation
- --> tests/ui/why_provenance/macro_and_disjunction_expanded_aggregation.rs:4:33
-  |
-4 |    macro aggregate($x: ident) { agg $x = count() in input(_) }
-  |                                 ^^^

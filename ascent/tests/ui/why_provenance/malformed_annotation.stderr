@@ -1,5 +1,0 @@
-error: expected `#[provenance(TokenType)]`
- --> tests/ui/why_provenance/malformed_annotation.rs:4:4
-  |
-4 |    #[provenance]
-  |    ^^^^^^^^^^^^^

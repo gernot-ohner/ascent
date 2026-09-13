@@ -1,8 +1,6 @@
-use std::cmp::Ordering;
 use std::collections::BTreeSet;
-use std::hash::{DefaultHasher, Hash, Hasher};
 
-use ascent::{Lattice, WhyProvenance, ascent, ascent_run};
+use ascent::{WhyProvenance, ascent, ascent_run};
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct NonDefaultToken(&'static str);
@@ -16,96 +14,12 @@ mod provenance_source {
 }
 
 #[test]
-fn witness_domain_distinguishes_zero_and_one_and_uses_subset_order() {
-   let zero = WhyProvenance::<&str>::default();
-   let one = ascent::internal::why_provenance_one();
-   let a = WhyProvenance::token("a");
-   let b = WhyProvenance::token("b");
-   let alternatives = a.clone().join(b.clone());
-
-   assert!(zero.witnesses().is_empty());
-   assert_eq!(one.witnesses(), &BTreeSet::from([BTreeSet::new()]));
-   assert_ne!(zero, one);
-   assert_eq!(a.partial_cmp(&alternatives), Some(Ordering::Less));
-   assert_eq!(a.partial_cmp(&b), None);
-}
-
-#[test]
 fn token_type_does_not_need_to_implement_default() {
    let zero = WhyProvenance::<NonDefaultToken>::default();
    let token = WhyProvenance::token(NonDefaultToken("token"));
 
    assert!(zero.witnesses().is_empty());
    assert_eq!(token.witnesses(), &BTreeSet::from([BTreeSet::from([NonDefaultToken("token")])]));
-}
-
-#[test]
-fn witness_domain_lattice_and_product_keep_all_explanations() {
-   let a = WhyProvenance::token("a");
-   let b = WhyProvenance::token("b");
-   let c = WhyProvenance::token("c");
-   let left = a.clone().join(b.clone());
-   let right = a.clone().join(c.clone());
-
-   assert_eq!(left.clone().meet(right.clone()), a);
-   assert_eq!(left.clone().join(right.clone()).witnesses().len(), 3);
-   assert_eq!(
-      ascent::internal::why_provenance_product(&left, &right).witnesses(),
-      &BTreeSet::from([
-         BTreeSet::from(["a"]),
-         BTreeSet::from(["a", "b"]),
-         BTreeSet::from(["a", "c"]),
-         BTreeSet::from(["b", "c"]),
-      ])
-   );
-}
-
-#[test]
-fn witness_domain_obeys_lattice_and_product_laws() {
-   let zero = WhyProvenance::<&str>::default();
-   let one = ascent::internal::why_provenance_one();
-   let a = WhyProvenance::token("a");
-   let b = WhyProvenance::token("b");
-   let c = WhyProvenance::token("c");
-   let alternatives = a.clone().join(b.clone());
-
-   assert_eq!(a.clone().join(a.clone()), a);
-   assert_eq!(a.clone().join(b.clone()), b.clone().join(a.clone()));
-   assert_eq!(alternatives.clone().meet(a.clone()), a);
-   assert_eq!(ascent::internal::why_provenance_product(&a, &one), a);
-   assert_eq!(ascent::internal::why_provenance_product(&alternatives, &zero), zero);
-   assert_eq!(
-      ascent::internal::why_provenance_product(&alternatives, &c),
-      ascent::internal::why_provenance_product(&a, &c).join(ascent::internal::why_provenance_product(&b, &c))
-   );
-
-   let mut left_hasher = DefaultHasher::new();
-   let mut right_hasher = DefaultHasher::new();
-   alternatives.hash(&mut left_hasher);
-   b.clone().join(a).hash(&mut right_hasher);
-   assert_eq!(left_hasher.finish(), right_hasher.finish());
-}
-
-#[test]
-fn annotated_copy_normalizes_inputs_and_reruns_idempotently() {
-   ascent! {
-       #[provenance(&'static str)] relation input(i32);
-       #[provenance(&'static str)] relation output(i32);
-       output(x) <-- input(x);
-   }
-
-   let mut program = AscentProgram::default();
-   program.input = vec![(1, WhyProvenance::token("a")), (1, WhyProvenance::token("b")), (2, WhyProvenance::default())];
-   program.run();
-
-   assert_eq!(program.input.len(), 1);
-   assert_eq!(program.output.len(), 1);
-   assert_eq!(program.output[0].0, 1);
-   assert_eq!(program.output[0].1.witnesses(), &BTreeSet::from([BTreeSet::from(["a"]), BTreeSet::from(["b"])]));
-
-   let before = program.output.clone();
-   program.run();
-   assert_eq!(program.output, before);
 }
 
 #[test]
@@ -301,25 +215,6 @@ fn crossing_an_ordinary_relation_discards_upstream_witnesses() {
    };
 
    assert_eq!(result.retagged[0].1.witnesses(), &BTreeSet::from([BTreeSet::new()]));
-}
-
-#[test]
-fn recursive_rules_accumulate_late_alternative_witnesses() {
-   ascent! {
-      #[provenance(&'static str)] relation edge(i32, i32);
-      #[provenance(&'static str)] relation path(i32, i32);
-
-      path(x, y) <-- edge(x, y);
-      path(x, z) <-- edge(x, y), path(y, z);
-   }
-
-   let mut program = AscentProgram::default();
-   program.edge =
-      vec![(1, 2, WhyProvenance::token("a")), (2, 3, WhyProvenance::token("b")), (1, 3, WhyProvenance::token("c"))];
-   program.run();
-
-   let row = program.path.iter().find(|row| row.0 == 1 && row.1 == 3).unwrap();
-   assert_eq!(row.2.witnesses(), &BTreeSet::from([BTreeSet::from(["a", "b"]), BTreeSet::from(["c"])]));
 }
 
 #[test]

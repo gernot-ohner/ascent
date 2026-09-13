@@ -18,9 +18,11 @@ ascent! {
 }
 
 fn single_witness(tokens: &Witness) -> WhyProvenance<Token> {
-   tokens.iter().copied().map(WhyProvenance::token).fold(ascent::internal::why_provenance_one(), |product, token| {
-      ascent::internal::why_provenance_product(&product, &token)
-   })
+   tokens
+      .iter()
+      .copied()
+      .map(WhyProvenance::token)
+      .fold(WhyProvenance::__one(), |product, token| WhyProvenance::__product(&product, &token))
 }
 
 fn finite_domain() -> Vec<(WhyProvenance<Token>, Witnesses)> {
@@ -83,7 +85,7 @@ fn finite_domain_operations_match_the_independent_set_model() {
          assert_eq!(met.witnesses(), &expected_meet, "meet of values {value_index} and {other_index}");
          assert_eq!(meet_changed, &expected_meet != model, "meet change flag for {value_index} and {other_index}");
 
-         let product = ascent::internal::why_provenance_product(value, other);
+         let product = WhyProvenance::__product(value, other);
          assert_eq!(product.witnesses(), &expected_product, "product of values {value_index} and {other_index}");
          assert_eq!(
             value.partial_cmp(other),
@@ -125,18 +127,17 @@ fn every_finite_domain_triple_obeys_lattice_and_product_laws() {
                "meet associativity for values {left_index}, {middle_index}, and {right_index}"
             );
 
-            let left_middle = ascent::internal::why_provenance_product(left, middle);
-            let middle_right = ascent::internal::why_provenance_product(middle, right);
+            let left_middle = WhyProvenance::__product(left, middle);
+            let middle_right = WhyProvenance::__product(middle, right);
             assert_eq!(
-               ascent::internal::why_provenance_product(&left_middle, right),
-               ascent::internal::why_provenance_product(left, &middle_right),
+               WhyProvenance::__product(&left_middle, right),
+               WhyProvenance::__product(left, &middle_right),
                "product associativity for values {left_index}, {middle_index}, and {right_index}"
             );
 
             let middle_or_right = middle.clone().join(right.clone());
-            let distributed_left = ascent::internal::why_provenance_product(left, &middle_or_right);
-            let distributed_right = ascent::internal::why_provenance_product(left, middle)
-               .join(ascent::internal::why_provenance_product(left, right));
+            let distributed_left = WhyProvenance::__product(left, &middle_or_right);
+            let distributed_right = WhyProvenance::__product(left, middle).join(WhyProvenance::__product(left, right));
             assert_eq!(
                distributed_left, distributed_right,
                "left distributivity for values {left_index}, {middle_index}, and {right_index}"
@@ -155,10 +156,10 @@ fn lifecycle_choice(choice: usize) -> Option<(Node, WhyProvenance<Token>)> {
    let node = (choice / 5) as Node;
    let annotation = match choice % 5 {
       0 => WhyProvenance::default(),
-      1 => ascent::internal::why_provenance_one(),
+      1 => WhyProvenance::__one(),
       2 => WhyProvenance::token(0),
       3 => WhyProvenance::token(1),
-      4 => ascent::internal::why_provenance_product(&WhyProvenance::token(0), &WhyProvenance::token(1)),
+      4 => WhyProvenance::__product(&WhyProvenance::token(0), &WhyProvenance::token(1)),
       _ => unreachable!(),
    };
    Some((node, annotation))

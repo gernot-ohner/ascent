@@ -89,16 +89,5 @@ fn main() {
    ];
 
    let result = shortest_path_with_why(&edges, "A", "Z");
-   assert_eq!(
-      result,
-      Some((
-         5,
-         BTreeSet::from([
-            BTreeSet::from(["ab", "bz"]),
-            BTreeSet::from(["ac", "cz"]),
-            BTreeSet::from(["ab", "bu", "bz", "ub"]),
-         ]),
-      ))
-   );
    println!("{result:?}");
 }

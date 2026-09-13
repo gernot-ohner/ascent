@@ -1,5 +1,0 @@
-error: `provenance` is only supported by serial Ascent
- --> tests/ui/why_provenance/parallel/parallel_ascent.rs:4:4
-  |
-4 |    #[provenance(&'static str)]
-  |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^

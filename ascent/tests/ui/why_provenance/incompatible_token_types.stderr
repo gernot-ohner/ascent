@@ -1,8 +1,0 @@
-error[E0308]: mismatched types
- --> tests/ui/why_provenance/incompatible_token_types.rs:7:4
-  |
-7 |    output(x) <-- input(x);
-  |    ^^^^^^ expected `WhyProvenance<u32>`, found `WhyProvenance<&str>`
-  |
-  = note: expected struct `WhyProvenance<u32>`
-             found struct `WhyProvenance<&str>`
