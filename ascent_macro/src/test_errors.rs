@@ -66,6 +66,34 @@ fn provenance_attribute_validation_errors_are_source_level() {
 }
 
 #[test]
+fn provenance_program_setting_is_validated() {
+   for attribute in [
+      quote! { #![provenance] },
+      quote! { #![provenance()] },
+      quote! { #![provenance(unknown)] },
+      quote! { #![provenance(absorption, extra)] },
+   ] {
+      assert_ascent_error(
+         quote! { #attribute #[provenance(u8)] relation input(u8); },
+         AscentMacroKind::default(),
+         "expected `#![provenance(absorption)]`",
+      );
+   }
+   assert_ascent_error(
+      quote! { #![provenance(absorption)] #![provenance(absorption)] relation input(u8); },
+      AscentMacroKind::default(),
+      "multiple program-level `provenance` attributes",
+   );
+   for is_ascent_run in [false, true] {
+      assert_ascent_error(
+         quote! { #![provenance(absorption)] #[provenance(u8)] relation input(u8); },
+         AscentMacroKind { is_ascent_run, is_parallel: true },
+         "only supported by serial Ascent",
+      );
+   }
+}
+
+#[test]
 fn provenance_restrictions_are_checked_after_macro_and_disjunction_expansion() {
    assert_ascent_error(
       quote! {

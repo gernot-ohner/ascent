@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use itertools::Itertools;
 use proc_macro2::{Ident, Span};
 use syn::spanned::Spanned;
-use syn::{Attribute, Error, Expr, Type, parse_quote_spanned};
+use syn::{Attribute, Error, Expr, Path, Type, parse_quote, parse_quote_spanned};
 
 use crate::ascent_hir::prog_get_relation;
 use crate::ascent_syntax::{AscentProgram, BodyClauseArg, BodyItemNode, HeadItemNode, body_item_get_bound_vars};
@@ -11,6 +11,25 @@ use crate::ascent_syntax::{AscentProgram, BodyClauseArg, BodyItemNode, HeadItemN
 const PROVENANCE_ATTR: &str = "provenance";
 
 pub(crate) fn lower_why_provenance(prog: &mut AscentProgram, is_parallel: bool) -> syn::Result<()> {
+   let mut absorption = false;
+   for attr in prog.attributes.iter().filter(|attr| attr.path().is_ident(PROVENANCE_ATTR)) {
+      if absorption {
+         return Err(Error::new_spanned(attr, "multiple program-level `provenance` attributes specified"));
+      }
+      if !matches!(attr.parse_args::<Ident>(), Ok(mode) if mode == "absorption") {
+         return Err(Error::new_spanned(attr, "expected `#![provenance(absorption)]`"));
+      }
+      if is_parallel {
+         return Err(Error::new_spanned(attr, "`provenance` is only supported by serial Ascent"));
+      }
+      absorption = true;
+   }
+   prog.attributes.retain(|attr| !attr.path().is_ident(PROVENANCE_ATTR));
+   let provenance_type: Path = if absorption {
+      parse_quote!(::ascent::AbsorbingWhyProvenance)
+   } else {
+      parse_quote!(::ascent::WhyProvenance)
+   };
    let mut annotation_types = Vec::<(usize, Type)>::new();
 
    for (index, relation) in prog.relations.iter_mut().enumerate() {
@@ -29,7 +48,7 @@ pub(crate) fn lower_why_provenance(prog: &mut AscentProgram, is_parallel: bool) 
       let token_type = parse_provenance_type(attr)?;
 
       relation.attrs.retain(|attr| !attr.meta.path().is_ident(PROVENANCE_ATTR));
-      annotation_types.push((index, parse_quote_spanned! {attr.span()=> ::ascent::WhyProvenance<#token_type>}));
+      annotation_types.push((index, parse_quote_spanned! {attr.span()=> #provenance_type<#token_type>}));
       relation.is_lattice = true;
       relation.is_provenance = true;
    }
@@ -115,7 +134,7 @@ pub(crate) fn lower_why_provenance(prog: &mut AscentProgram, is_parallel: bool) 
          if !prog_get_relation(prog, &head.rel, head.args.len())?.is_provenance {
             continue;
          }
-         let product = provenance_product(&body_annotations, head.rel.span());
+         let product = provenance_product(&body_annotations, head.rel.span(), &provenance_type);
          head.args.push(product);
       }
    }
@@ -143,14 +162,14 @@ fn parse_provenance_type(attr: &Attribute) -> syn::Result<Type> {
       .map_err(|_| Error::new_spanned(attr, "expected exactly one token type in `#[provenance(TokenType)]`"))
 }
 
-fn provenance_product(annotations: &[Ident], span: Span) -> Expr {
+fn provenance_product(annotations: &[Ident], span: Span, provenance_type: &Path) -> Expr {
    let Some((first, rest)) = annotations.split_first() else {
-      return parse_quote_spanned! {span=> ::ascent::WhyProvenance::__one()};
+      return parse_quote_spanned! {span=> #provenance_type::__one()};
    };
    let mut product: Expr = parse_quote_spanned! {span=> (*#first).clone()};
    for annotation in rest {
       product = parse_quote_spanned! {span=>
-         ::ascent::WhyProvenance::__product(&(#product), #annotation)
+         #provenance_type::__product(&(#product), #annotation)
       };
    }
    product

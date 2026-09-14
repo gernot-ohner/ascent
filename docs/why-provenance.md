@@ -41,6 +41,46 @@ The outer set contains alternative explanations. Each inner set contains the inp
 - Reusing a token does not add multiplicity, and witnesses do not record traversal order.
 - No minimal-witness absorption is performed. Both `{a}` and `{a, b}` remain when both are derived.
 
+### Optional absorption
+
+Add `#![provenance(absorption)]` at the beginning of an `ascent!` or
+`ascent_run!` program to retain only inclusion-minimal witness sets:
+
+```rust
+use ascent::{AbsorbingWhyProvenance, ascent};
+
+ascent! {
+    #![provenance(absorption)]
+    struct Paths;
+    #[provenance(String)] relation edge(i32, i32);
+    #[provenance(String)] relation path(i32, i32);
+    path(x, y) <-- edge(x, y);
+    path(x, z) <-- edge(x, y), path(y, z);
+}
+
+let mut paths = Paths::default();
+paths.edge = vec![(1, 2, AbsorbingWhyProvenance::token("e12".into()))];
+paths.run();
+```
+
+The setting applies to every provenance-annotated relation in that program;
+ordinary relations and user-declared lattices are unaffected. Public annotations
+use `AbsorbingWhyProvenance<T>` instead of `WhyProvenance<T>`, with the same
+`token` and `witnesses` interface. Omitting the setting preserves the default.
+
+Absorption merges `{a}` and `{a, b}` into just `{a}`. It can therefore remove
+zero-cost-cycle witnesses while retaining tied shortest-route witnesses that
+do not contain one another. Multiplication also normalizes its candidates,
+including when a tuple is first inserted. The specialized lattice reports
+changes by content, not witness count; Ascent's evaluator remains unchanged.
+
+The absorbing lattice's join is disjunction (minimal alternatives), its meet
+is conjunction (normalized witness multiplication), and its ordering is logical
+implication. This differs from the non-absorbing type's ordinary set-inclusion
+ordering and intersection-based meet. These types are not implicitly converted.
+
+### Untracked background
+
 Ordinary relations are untracked background. An ordinary clause contributes no tokens to an annotated head, so a rule using only ordinary inputs produces the identity witness. Passing data through an ordinary relation deliberately discards upstream provenance. Ordinary aggregation and negation may read annotated relations, but their results are likewise untracked.
 
 Embedded Rust conditions, bindings, patterns, generators, and called functions are supported but untracked. Ascent does not inspect those expressions for external dependencies or purity; their behavior must remain stable during a fixed-point run.
@@ -78,4 +118,4 @@ The resulting token sets explain walks in the distance-tight subgraph; they are 
 
 ## Prototype performance limits
 
-The number of witness alternatives can be exponential in the number of input tokens, and no witness cap or absorption policy is applied. Input coalescing is currently quadratic in the number of annotated input rows because it uses a linear search for each row. This prototype favors direct, deterministic semantics over large-instance performance.
+The number of witness alternatives can be exponential in the number of input tokens, even with absorption. No witness cap is applied. Absorption requires subset checks and is not a performance guarantee. Input coalescing is currently quadratic in the number of annotated input rows because it uses a linear search for each row. This prototype favors direct, deterministic semantics over large-instance performance.

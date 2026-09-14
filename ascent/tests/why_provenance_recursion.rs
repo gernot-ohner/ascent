@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
-use ascent::{WhyProvenance, ascent};
+use ascent::{AbsorbingWhyProvenance, WhyProvenance, ascent};
 
 type Node = u8;
 type Token = u8;
@@ -132,6 +132,40 @@ fn every_three_node_graph_matches_the_mutual_walk_oracle_in_both_input_orders() 
          assert_eq!(relation_contents(&mutual.reachable), expected, "mutual reachability, graph mask {mask:#05x}");
          assert_eq!(relation_contents(&mutual.mirror), expected, "mutual mirror, graph mask {mask:#05x}");
          assert_eq!(relation_contents(&mutual.downstream), expected, "mutual downstream, graph mask {mask:#05x}");
+      }
+   }
+}
+
+ascent! {
+   #![provenance(absorption)]
+   struct AbsorbingReachability;
+   #[provenance(Token)] relation edge(Node, Node);
+   #[provenance(Token)] relation reachable(Node, Node);
+   #[provenance(Token)] relation mirror(Node, Node);
+   #[provenance(Token)] relation downstream(Node, Node);
+
+   reachable(x, y) <-- edge(x, y);
+   mirror(x, y) <-- reachable(x, y);
+   reachable(x, z) <-- mirror(x, y), mirror(y, z);
+   downstream(x, y) <-- reachable(x, y);
+}
+
+#[test]
+fn absorption_matches_minimal_walk_witnesses_on_every_three_node_graph() {
+   for (mask, edges, mut expected) in every_three_node_graph() {
+      for witnesses in expected.values_mut() {
+         let all = witnesses.clone();
+         witnesses.retain(|w| !all.iter().any(|v| v != w && v.is_subset(w)));
+      }
+      for input in [edges.clone(), edges.iter().copied().rev().collect()] {
+         let mut program = AbsorbingReachability::default();
+         program.edge = input.iter().map(|&(x, y, t)| (x, y, AbsorbingWhyProvenance::token(t))).collect();
+         program.run();
+         for rows in [&program.reachable, &program.mirror, &program.downstream] {
+            let actual: Reachability = rows.iter().map(|(x, y, p)| ((*x, *y), p.witnesses().clone())).collect();
+            assert_eq!(rows.len(), actual.len());
+            assert_eq!(actual, expected, "absorbing reachability, graph mask {mask:#05x}");
+         }
       }
    }
 }

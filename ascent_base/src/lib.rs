@@ -3,4 +3,4 @@ mod why_provenance;
 #[doc(hidden)]
 pub mod util;
 pub use lattice::{Dual, Lattice};
-pub use why_provenance::WhyProvenance;
+pub use why_provenance::{AbsorbingWhyProvenance, WhyProvenance};
