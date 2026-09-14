@@ -68,6 +68,8 @@ There is no generic provenance-semiring interface, how-provenance, retraction AP
 
 The runnable [`why_provenance` example](../ascent/examples/why_provenance.rs) shows a small diamond graph with two alternative reachability explanations.
 
+The [ProvSQL comparison](../ascent/examples/provsql/README.md) runs equivalent nonrecursive queries in both systems and checks their complete witness sets against one another.
+
 ## Shortest paths
 
 The [`why_provenance_shortest_path` example](../ascent/examples/why_provenance_shortest_path.rs) first computes final `Dual<u32>` distances to a destination and then runs a separate why-provenance computation over distance-tight edges. It uses checked addition, seeds the destination with distance zero and the identity witness, retains tied routes and zero-cost-cycle witnesses, and reports unreachable sources explicitly.
