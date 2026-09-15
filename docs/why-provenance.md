@@ -113,7 +113,7 @@ There is no generic provenance-semiring interface, how-provenance, probability p
 
 The runnable [`why_provenance` example](../ascent/examples/why_provenance.rs) shows a small diamond graph with two alternative reachability explanations.
 
-The [ProvSQL comparison](../ascent/examples/provsql/README.md) runs equivalent nonrecursive queries in both systems and checks their complete witness sets against one another.
+The [ProvSQL comparison](../ascent/examples/provsql/README.md) checks complete witness sets for both modes, including acyclic why recursion, cyclic Boolean recursion, fresh dataset snapshots and the actual shortest-path demo against pinned ProvSQL results.
 
 ## Shortest paths
 

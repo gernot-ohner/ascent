@@ -1,4 +1,4 @@
-# Compare why-provenance with ProvSQL
+# Compare why and Boolean provenance with ProvSQL
 
 From the repository root:
 
@@ -6,58 +6,100 @@ From the repository root:
 python3 ascent/examples/provsql/compare.py
 ```
 
-Requires Python 3, the Rust 1.85.0 toolchain, and a running Docker engine.
-The first run downloads the official ProvSQL image (about 1 GB). Its digest
-is pinned in `compare.py`: ProvSQL 1.12.0 with PostgreSQL 17.10, linux/amd64.
-Docker Desktop on Apple Silicon runs it through architecture emulation.
+Requires Python 3, Rust 1.85.0 and a running Docker engine. The runner builds
+the comparison example and uses unmodified ProvSQL 1.12.0 with PostgreSQL 17.10
+(linux/amd64). Every run prints the actual versions and the pinned image:
 
-The runner builds the Ascent example and starts PostgreSQL in a fresh container,
-without publishing ports, mounting host directories, or enabling container
-network access. It creates a disposable database and removes the container and
-its test data on exit. The downloaded image remains cached for future runs.
-No existing database is used or modified. ProvSQL Studio is not started.
+```text
+inriavalda/provsql@sha256:58b7ad6acacfd769d8898a8a27603743ca461c9e9a56da93d3ff049a9c28148c
+```
 
-## What is compared
-
-[`edges.tsv`](edges.tsv) supplies the same input rows to both systems. The token
-labels are integers; `0`, `1`, `2`, and `3` identify graph nodes. Each dataset
-runs these corresponding [Ascent rules](../provsql_compare.rs) and
-[SQL queries](queries.sql):
-
-| Example | Behavior checked |
-| --- | --- |
-| Copy | Preserve annotations; combine duplicate logical input tuples. |
-| Join | Multiply evidence, including alternative paths through a diamond. |
-| Projection | Combine evidence from distinct rows projected to one tuple. |
-| Alternatives | Union two rules, including overlapping matches. |
-| Self-join | Collapse repeated tokens but retain different combined witnesses. |
-| Non-absorption | Retain a witness and its proper superset. |
-| Alternative product | Multiply accumulated alternatives from an intermediate relation. |
-| No match | Return an empty relation. |
-
-The four datasets are the plain diamond, the full fixture with a loop and a
-duplicate logical edge, that full fixture in reverse order, and empty input.
-Every comparison checks the **entire relation and every witness set**, ignoring
-only row/set ordering and ProvSQL's internal circuit identifiers. Missing or
-extra tuples/witnesses fail the run; duplicate output tuples are rejected.
-The runner performs no provenance evaluation of its own.
-
-Two useful results printed by the runner:
-
-- Plain diamond, join from node 0 to node 3: `[[1, 3], [2, 4]]`.
-- Full fixture, non-absorption from node 1 to node 3: `[[3], [3, 5]]`.
-  Token 5 is the loop: the larger witness is intentionally retained.
-
-## Reference and limits
-
-The reference is ProvSQL's built-in `sr_why`, with its provenance class explicitly
-set to `semiring`, not `boolean` or `absorptive`. The release's source revision is
+The release source is
 [`efe8fe0`](https://github.com/PierreSenellart/provsql/tree/efe8fe0f03ac8b30fb53c93daf2acd7f0e3b8d42).
-See its [semiring documentation](https://provsql.org/docs/user/semirings.html).
+Docker Desktop on Apple Silicon uses architecture emulation.
 
-These are nonrecursive queries, even when the input contains a loop: the rules
-traverse only the explicitly specified number of edges. This comparison does
-**not** establish equivalence for cyclic recursion, shortest-path evaluation,
-arbitrary Rust expressions, or all possible programs. The existing recursive
-tests continue to use an independent graph-walk reference. Agreement on these
-examples is reproducible external evidence, not a universal correctness proof.
+## Coverage
+
+One shared [Ascent rule body](../provsql_compare.rs) is instantiated with
+`WhyProvenance` and `BooleanProvenance`. Equivalent [SQL queries](queries.sql)
+cover all original cases: copy, join, projection, overlapping alternatives,
+self-join, non-absorption, product of alternatives and no match. Additional
+queries cover recursive reachability, recursive suffixes to a fixed destination,
+and the empty identity witness from ordinary background.
+
+The graph datasets are:
+
+- The diamond from [edges.tsv](edges.tsv), the complete fixture (a self-loop
+  and duplicate logical edge with distinct labels), its reversed ordering,
+  and empty input.
+- A two-node cycle with a route to the destination and a disconnected component.
+- Duplicate physical rows sharing an application label; labels need not be
+  consecutive or start at one.
+- Before/after snapshots replacing one route with two alternatives. Each
+  snapshot starts a fresh Ascent process and isolated SQL transaction.
+- Four generated five-edge graphs, alternating DAGs and unrestricted directed
+  graphs, reproducible with Python's random seed `731`.
+
+All original nonrecursive cases run in both modes on every dataset, including
+cyclic inputs. Recursive why comparisons run only on directed acyclic graphs
+(DAGs); the adapter validates that precondition. On cyclic fixtures the recursive
+rules are disabled for why, while the nonrecursive queries still run.
+Boolean recursion runs on every graph.
+
+The runner also calls the actual
+[`shortest_path_with_why` demo function](../why_provenance_shortest_path.rs).
+It compares complete distances and minimal witnesses for ties, a longer route,
+a zero-cost self-loop, a two-node zero-cost cycle, a loop at the destination,
+disconnected/unreachable sources and empty input. Destination-to-itself produces
+the empty suffix. Independent reverse Dijkstra computes nonnegative shortest
+distances and tight edges for the SQL reference; it computes no witnesses.
+An acyclic tight-edge fixture is additionally compared with direct `sr_why`.
+
+## Reference adapter
+
+For ordinary why, the reference uses provenance class `semiring` and evaluates
+saved query roots with `sr_why`. Neither result is minimized.
+
+For Boolean mode, the reference uses class `boolean`. Each query is materialized
+once with provenance rewriting active. Rewriting is then disabled for ordinary
+mapping updates and evaluation of those same saved roots. For every subset of
+the fixture's distinct input labels, the runner evaluates every root with
+`sr_boolean` and a complete mapping containing explicit true **and false** values.
+All physical input UUIDs sharing an application label receive the same value.
+Every reachable circuit input leaf must be mapped, and the mapping must preserve
+the physical input-label multiplicities.
+
+The adapter derives inclusion-minimal true subsets from the complete truth
+table and compares those sets exactly with Ascent's Boolean witnesses. Fixtures
+have at most six labels, hence at most 64 valuations. Valuations are batched into
+one SQL session per fixture/mode. The fixed query, data and ordinary background
+never change across valuations. No Python provenance evaluator or probability
+API is used.
+
+ProvSQL's internal circuit columns are consumed explicitly: saved UUIDs are
+projected as text under a separate column name because the extension hides its
+`provsql` column in ordinary query output. UUIDs are validated, then excluded
+from witness equality. The standalone background identity uses ProvSQL's
+`gate_one()`, without inventing an input label.
+
+Every comparison checks the entire tuple/witness map. Ordering alone is
+normalized; duplicate tuples, duplicate witnesses/tokens, unknown labels,
+malformed output, missing sections and incomplete mappings fail. The startup
+checks exercise these parser/mapping failures and DAG rejection. Controlled
+wrong/missing answers and a nonminimal Boolean witness must fail the same exact
+comparison used for the engines. These controls alter only local test values.
+
+## Isolation and limits
+
+The runner starts a fresh container without ports, host mounts or network
+access, creates a disposable database, and rolls back every fixture transaction.
+It removes the container and its test data on normal exit or exceptions; the
+downloaded image stays cached. A forced process termination can prevent cleanup.
+No existing database is used, and ProvSQL Studio is not started.
+
+This is bounded external evidence for these positive queries and fixtures,
+not universal equivalence. Non-absorbing cyclic recursion remains outside the
+supported contract; the fixture guard is not a runtime Ascent cycle detector.
+The comparison does not establish incremental maintenance, tracked negation or
+aggregation, probabilities, how-provenance, parallel provenance, arbitrary Rust
+expressions or parity with all SQL features.
