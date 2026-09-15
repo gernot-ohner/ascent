@@ -53,18 +53,18 @@ impl<T: Ord + Hash> Lattice for WhyProvenance<T> {
    fn join_mut(&mut self, other: Self) -> bool { self.witnesses.join_mut(other.witnesses) }
 }
 
-/// Why-provenance retaining only inclusion-minimal witness sets.
+/// Boolean why-provenance retaining only inclusion-minimal witness sets.
 ///
 /// A smaller witness absorbs its supersets. Ordering is logical implication:
 /// every witness on the left must contain some witness on the right.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct AbsorbingWhyProvenance<T: Ord + Hash>(WhyProvenance<T>);
+pub struct BooleanProvenance<T: Ord + Hash>(WhyProvenance<T>);
 
-impl<T: Ord + Hash> Default for AbsorbingWhyProvenance<T> {
+impl<T: Ord + Hash> Default for BooleanProvenance<T> {
    fn default() -> Self { Self(WhyProvenance::default()) }
 }
 
-impl<T: Ord + Hash> AbsorbingWhyProvenance<T> {
+impl<T: Ord + Hash> BooleanProvenance<T> {
    /// Returns the inclusion-minimal witness sets.
    pub fn witnesses(&self) -> &BTreeSet<BTreeSet<T>> { self.0.witnesses() }
 
@@ -84,7 +84,7 @@ impl<T: Ord + Hash> AbsorbingWhyProvenance<T> {
    }
 }
 
-impl<T: Clone + Ord + Hash> AbsorbingWhyProvenance<T> {
+impl<T: Clone + Ord + Hash> BooleanProvenance<T> {
    #[doc(hidden)]
    pub fn __product(&self, other: &Self) -> Self {
       // Normalize candidates too: first insertion of a tuple can bypass join.
@@ -96,7 +96,7 @@ impl<T: Clone + Ord + Hash> AbsorbingWhyProvenance<T> {
    }
 }
 
-impl<T: Ord + Hash> PartialOrd for AbsorbingWhyProvenance<T> {
+impl<T: Ord + Hash> PartialOrd for BooleanProvenance<T> {
    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
       let implies =
          |left: &Self, right: &Self| left.witnesses().iter().all(|w| right.witnesses().iter().any(|v| v.is_subset(w)));
@@ -109,7 +109,7 @@ impl<T: Ord + Hash> PartialOrd for AbsorbingWhyProvenance<T> {
    }
 }
 
-impl<T: Clone + Ord + Hash> Lattice for AbsorbingWhyProvenance<T> {
+impl<T: Clone + Ord + Hash> Lattice for BooleanProvenance<T> {
    fn meet_mut(&mut self, other: Self) -> bool {
       let product = self.__product(&other);
       let changed = *self != product;

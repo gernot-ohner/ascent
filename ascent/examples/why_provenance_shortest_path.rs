@@ -7,7 +7,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use ascent::{Dual, WhyProvenance, ascent};
+use ascent::{BooleanProvenance, Dual, ascent};
 
 pub type Node = &'static str;
 pub type EdgeToken = &'static str;
@@ -27,6 +27,7 @@ ascent! {
 }
 
 ascent! {
+   #![provenance(boolean)]
    struct ShortestPathWitnesses;
 
    relation destination(Node);
@@ -37,7 +38,7 @@ ascent! {
    reaches_destination(source) <-- tight_edge(source, target), reaches_destination(target);
 }
 
-/// Returns the shortest distance and the token set for every shortest walk.
+/// Returns the shortest distance and the minimal token set for every shortest walk.
 ///
 /// Weights are nonnegative. Arithmetic overflow is treated as an unusable
 /// edge. A witness is a set, so it records neither traversal order nor repeated
@@ -63,7 +64,7 @@ pub fn shortest_path_with_why(
          let Some(&to_distance) = distances_by_node.get(to) else { return false };
          weight.checked_add(to_distance) == Some(from_distance)
       })
-      .map(|&(from, to, _, token)| (from, to, WhyProvenance::token(token)))
+      .map(|&(from, to, _, token)| (from, to, BooleanProvenance::token(token)))
       .collect();
    witnesses.run();
 

@@ -71,22 +71,23 @@ fn provenance_program_setting_is_validated() {
       quote! { #![provenance] },
       quote! { #![provenance()] },
       quote! { #![provenance(unknown)] },
-      quote! { #![provenance(absorption, extra)] },
+      quote! { #![provenance(absorption)] },
+      quote! { #![provenance(boolean, extra)] },
    ] {
       assert_ascent_error(
          quote! { #attribute #[provenance(u8)] relation input(u8); },
          AscentMacroKind::default(),
-         "expected `#![provenance(absorption)]`",
+         "expected `#![provenance(boolean)]`",
       );
    }
    assert_ascent_error(
-      quote! { #![provenance(absorption)] #![provenance(absorption)] relation input(u8); },
+      quote! { #![provenance(boolean)] #![provenance(boolean)] relation input(u8); },
       AscentMacroKind::default(),
       "multiple program-level `provenance` attributes",
    );
    for is_ascent_run in [false, true] {
       assert_ascent_error(
-         quote! { #![provenance(absorption)] #[provenance(u8)] relation input(u8); },
+         quote! { #![provenance(boolean)] #[provenance(u8)] relation input(u8); },
          AscentMacroKind { is_ascent_run, is_parallel: true },
          "only supported by serial Ascent",
       );

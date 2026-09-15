@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 
-use ascent::{AbsorbingWhyProvenance as Why, Dual, Lattice, ascent, ascent_run};
+use ascent::{BooleanProvenance as Why, Dual, Lattice, ascent, ascent_run};
 
 fn from_mask(mask: u8) -> Why<u8> {
    (0..3)
@@ -20,7 +20,7 @@ fn worlds(witnesses: &BTreeSet<u8>) -> BTreeSet<u8> {
 }
 
 #[test]
-fn absorbing_lattice_matches_all_three_token_truth_tables() {
+fn boolean_lattice_matches_all_three_token_truth_tables() {
    let mut domain = (0..256_u16)
       .map(|alternatives| {
          let raw: BTreeSet<u8> = (0..8).filter(|w| alternatives & (1 << w) != 0).collect();
@@ -64,8 +64,8 @@ fn absorbing_lattice_matches_all_three_token_truth_tables() {
 }
 
 ascent! {
-   #![provenance(absorption)]
-   struct Absorbing;
+   #![provenance(boolean)]
+   struct Boolean;
    #[provenance(u8)] relation input(u8);
    #[provenance(u8)] relation copied(u8);
    #[provenance(u8)] relation product(u8);
@@ -80,9 +80,9 @@ ascent! {
 }
 
 #[test]
-fn program_setting_normalizes_inputs_and_first_insertions_without_changing_background() {
+fn boolean_program_setting_normalizes_inputs_and_first_insertions_without_changing_background() {
    for values in [vec![3, 1, 2], vec![2, 1, 3]] {
-      let mut program = Absorbing::default();
+      let mut program = Boolean::default();
       program.input = values.into_iter().map(|mask| (0, from_mask(mask))).collect();
       program.input.push((1, Why::default()));
       program.background = vec![(1,), (2,)];
@@ -101,9 +101,9 @@ fn program_setting_normalizes_inputs_and_first_insertions_without_changing_backg
 }
 
 #[test]
-fn inline_program_absorbs_candidates_from_different_rules() {
+fn inline_boolean_program_absorbs_candidates_from_different_rules() {
    let result = ascent_run! {
-      #![provenance(absorption)]
+      #![provenance(boolean)]
       #[provenance(u8)] relation input(u8) = vec![(0, from_mask(3))];
       #[provenance(u8)] relation smaller(u8) = vec![(0, from_mask(1))];
       #[provenance(u8)] relation output(u8);

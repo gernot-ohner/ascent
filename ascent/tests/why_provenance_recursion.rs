@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
-use ascent::{AbsorbingWhyProvenance, WhyProvenance, ascent};
+use ascent::{BooleanProvenance, WhyProvenance, ascent};
 
 type Node = u8;
 type Token = u8;
@@ -92,9 +92,24 @@ fn every_three_node_graph() -> impl Iterator<Item = (u16, Vec<(Node, Node, Token
    })
 }
 
+fn every_three_node_acyclic_graph() -> impl Iterator<Item = (u16, Vec<(Node, Node, Token)>, Reachability)> {
+   let pairs = (0..3).flat_map(|source| ((source + 1)..3).map(move |target| (source, target))).collect::<Vec<_>>();
+
+   (0..(1_u16 << pairs.len())).map(move |mask| {
+      let edges = pairs
+         .iter()
+         .enumerate()
+         .filter(|(token, _)| mask & (1 << token) != 0)
+         .map(|(token, &(source, target))| (source, target, token as Token))
+         .collect::<Vec<_>>();
+      let expected = walk_oracle(&edges);
+      (mask, edges, expected)
+   })
+}
+
 #[test]
-fn every_three_node_graph_matches_the_linear_walk_oracle_in_both_input_orders() {
-   for (mask, edges, expected) in every_three_node_graph() {
+fn every_three_node_acyclic_graph_matches_the_linear_walk_oracle_in_both_input_orders() {
+   for (mask, edges, expected) in every_three_node_acyclic_graph() {
       for input in [edges.clone(), edges.iter().copied().rev().collect()] {
          let mut linear = LinearReachability::default();
          linear.edge = tagged_edges(&input);
@@ -106,8 +121,8 @@ fn every_three_node_graph_matches_the_linear_walk_oracle_in_both_input_orders() 
 }
 
 #[test]
-fn every_three_node_graph_with_at_most_six_edges_matches_the_nonlinear_walk_oracle_in_both_input_orders() {
-   for (mask, edges, expected) in every_three_node_graph().filter(|(mask, _, _)| mask.count_ones() <= 6) {
+fn every_three_node_acyclic_graph_matches_the_nonlinear_walk_oracle_in_both_input_orders() {
+   for (mask, edges, expected) in every_three_node_acyclic_graph() {
       for input in [edges.clone(), edges.iter().copied().rev().collect()] {
          let mut nonlinear = NonlinearReachability::default();
          nonlinear.edge = tagged_edges(&input);
@@ -123,8 +138,8 @@ fn every_three_node_graph_with_at_most_six_edges_matches_the_nonlinear_walk_orac
 }
 
 #[test]
-fn every_three_node_graph_matches_the_mutual_walk_oracle_in_both_input_orders() {
-   for (mask, edges, expected) in every_three_node_graph() {
+fn every_three_node_acyclic_graph_matches_the_mutual_walk_oracle_in_both_input_orders() {
+   for (mask, edges, expected) in every_three_node_acyclic_graph() {
       for input in [edges.clone(), edges.iter().copied().rev().collect()] {
          let mut mutual = MutualReachability::default();
          mutual.edge = tagged_edges(&input);
@@ -137,8 +152,8 @@ fn every_three_node_graph_matches_the_mutual_walk_oracle_in_both_input_orders() 
 }
 
 ascent! {
-   #![provenance(absorption)]
-   struct AbsorbingReachability;
+   #![provenance(boolean)]
+   struct BooleanReachability;
    #[provenance(Token)] relation edge(Node, Node);
    #[provenance(Token)] relation reachable(Node, Node);
    #[provenance(Token)] relation mirror(Node, Node);
@@ -151,20 +166,20 @@ ascent! {
 }
 
 #[test]
-fn absorption_matches_minimal_walk_witnesses_on_every_three_node_graph() {
+fn boolean_matches_minimal_walk_witnesses_on_every_three_node_graph() {
    for (mask, edges, mut expected) in every_three_node_graph() {
       for witnesses in expected.values_mut() {
          let all = witnesses.clone();
          witnesses.retain(|w| !all.iter().any(|v| v != w && v.is_subset(w)));
       }
       for input in [edges.clone(), edges.iter().copied().rev().collect()] {
-         let mut program = AbsorbingReachability::default();
-         program.edge = input.iter().map(|&(x, y, t)| (x, y, AbsorbingWhyProvenance::token(t))).collect();
+         let mut program = BooleanReachability::default();
+         program.edge = input.iter().map(|&(x, y, t)| (x, y, BooleanProvenance::token(t))).collect();
          program.run();
          for rows in [&program.reachable, &program.mirror, &program.downstream] {
             let actual: Reachability = rows.iter().map(|(x, y, p)| ((*x, *y), p.witnesses().clone())).collect();
             assert_eq!(rows.len(), actual.len());
-            assert_eq!(actual, expected, "absorbing reachability, graph mask {mask:#05x}");
+            assert_eq!(actual, expected, "boolean reachability, graph mask {mask:#05x}");
          }
       }
    }

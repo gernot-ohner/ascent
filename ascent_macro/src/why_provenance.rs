@@ -11,25 +11,22 @@ use crate::ascent_syntax::{AscentProgram, BodyClauseArg, BodyItemNode, HeadItemN
 const PROVENANCE_ATTR: &str = "provenance";
 
 pub(crate) fn lower_why_provenance(prog: &mut AscentProgram, is_parallel: bool) -> syn::Result<()> {
-   let mut absorption = false;
+   let mut boolean = false;
    for attr in prog.attributes.iter().filter(|attr| attr.path().is_ident(PROVENANCE_ATTR)) {
-      if absorption {
+      if boolean {
          return Err(Error::new_spanned(attr, "multiple program-level `provenance` attributes specified"));
       }
-      if !matches!(attr.parse_args::<Ident>(), Ok(mode) if mode == "absorption") {
-         return Err(Error::new_spanned(attr, "expected `#![provenance(absorption)]`"));
+      if !matches!(attr.parse_args::<Ident>(), Ok(mode) if mode == "boolean") {
+         return Err(Error::new_spanned(attr, "expected `#![provenance(boolean)]`"));
       }
       if is_parallel {
          return Err(Error::new_spanned(attr, "`provenance` is only supported by serial Ascent"));
       }
-      absorption = true;
+      boolean = true;
    }
    prog.attributes.retain(|attr| !attr.path().is_ident(PROVENANCE_ATTR));
-   let provenance_type: Path = if absorption {
-      parse_quote!(::ascent::AbsorbingWhyProvenance)
-   } else {
-      parse_quote!(::ascent::WhyProvenance)
-   };
+   let provenance_type: Path =
+      if boolean { parse_quote!(::ascent::BooleanProvenance) } else { parse_quote!(::ascent::WhyProvenance) };
    let mut annotation_types = Vec::<(usize, Type)>::new();
 
    for (index, relation) in prog.relations.iter_mut().enumerate() {
