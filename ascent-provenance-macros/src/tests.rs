@@ -1,7 +1,9 @@
 use crate::syntax::{parse_program, emit_program, Parsed};
 use crate::expand::expand_program;
 
-fn program(tokens: proc_macro2::TokenStream) -> crate::syntax::AscentProgram {
+pub(crate) fn program(tokens: proc_macro2::TokenStream) -> crate::syntax::AscentProgram {
+    // Give the fixture distinct source locations, as real macro input has.
+    let tokens = tokens.to_string().parse().unwrap();
     match parse_program(tokens, syn::parse_quote!(::ascent_provenance::provenance)).unwrap() {
         Parsed::Program(p) => p,
         Parsed::Include(_) => panic!("unexpected inclusion"),
@@ -47,6 +49,10 @@ fn nested_head_and_parameterized_macros_expand() {
 }
 
 fn compile_stock(name: &str, tokens: proc_macro2::TokenStream) {
+    run_stock(name, tokens, quote! {});
+}
+
+fn run_stock(name: &str, tokens: proc_macro2::TokenStream, body: proc_macro2::TokenStream) {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let dir = root.join("target/frontend-probes").join(name);
     std::fs::create_dir_all(dir.join("src")).unwrap();
@@ -62,13 +68,38 @@ ascent-provenance = {{ path = "{}" }}
 "#, root.join("ascent-provenance").display())).unwrap();
     std::fs::write(dir.join("src/main.rs"), quote! {
         ascent::ascent! { #tokens }
-        fn main() {}
+        fn main() { #body }
     }.to_string()).unwrap();
     let output = std::process::Command::new("cargo")
-        .args(["+1.85.0", "check", "--offline", "--quiet", "--manifest-path"])
+        .args(["+1.85.0", "run", "--offline", "--quiet", "--manifest-path"])
         .arg(dir.join("Cargo.toml")).env("CARGO_TARGET_DIR", root.join("target/frontend-probe-build"))
         .output().unwrap();
     assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+}
+
+#[test]
+fn lowered_diamond_runs_directly_in_stock_ascent() {
+    let mut p = program(quote! {
+        struct Diamond;
+        #[provenance(&'static str)] relation edge(char, char);
+        #[provenance(&'static str)] relation path(char, char);
+        path(x,y) <-- edge(x,y);
+        path(x,z) <-- edge(x,y), path(y,z);
+    });
+    expand_program(&mut p).unwrap();
+    let lowered = crate::lower::lower(p).unwrap();
+    let tokens = emit_program(&lowered.program);
+    assert!(!tokens.to_string().contains("# [provenance"));
+    run_stock("diamond", tokens, quote! {
+        use ascent_provenance::WhyProvenance as W;
+        use std::collections::BTreeSet as S;
+        let mut p = Diamond::default();
+        p.edge = vec![('A','B',W::token("ab")), ('A','C',W::token("ac")),
+                      ('B','D',W::token("bd")), ('C','D',W::token("cd"))];
+        p.run();
+        let row = p.path.iter().find(|r| r.0 == 'A' && r.1 == 'D').unwrap();
+        assert_eq!(row.2.witnesses(), &S::from([S::from(["ab","bd"]), S::from(["ac","cd"])]));
+    });
 }
 
 #[test]

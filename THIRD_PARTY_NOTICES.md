@@ -18,3 +18,6 @@ Transferred from the provenance experiment at commit
   `ascent_macro/src/syn_utils.rs`, and punctuated/token/span helpers from
   `ascent_macro/src/utils.rs`. The local `update` helper uses `mem::take`.
   No dependency analysis, index planner, or evaluator was extracted.
+- `lower.rs`: transferred `ascent_macro/src/why_provenance.rs`, with
+  public external runtime paths, local logical-arity lookup, and private
+  annotation metadata instead of HIR membership.
