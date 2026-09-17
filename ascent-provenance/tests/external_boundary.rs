@@ -147,3 +147,23 @@ fn timeout_false_is_inspectable_and_fresh_restart_completes() {
         assert!(fresh.path.iter().any(|r| r.0 == 32));
     }
 }
+
+#[test]
+fn custom_provider_private_state_survives_unchanged_rerun() {
+    provenance! {
+        struct Provider;
+        #[provenance(&'static str)] relation seed(u32, u32);
+        #[ds(ascent_byods_rels::trrel)] relation tr(u32, u32);
+        relation materialized(u32, u32);
+        tr(x,y) <-- seed(x,y);
+        tr(x,y) <-- tr(x,y);
+        materialized(x,y) <-- tr(x,y);
+    }
+    let mut p = Provider::default();
+    p.seed = vec![(1,2,W::token("a")), (2,3,W::token("b"))];
+    p.run();
+    let expected = BTreeSet::from([(1,2), (1,3), (2,3)]);
+    assert_eq!(p.materialized.iter().copied().collect::<BTreeSet<_>>(), expected);
+    p.run();
+    assert_eq!(p.materialized.iter().copied().collect::<BTreeSet<_>>(), expected);
+}

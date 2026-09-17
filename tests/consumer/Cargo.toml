@@ -1,0 +1,15 @@
+[package]
+name = "external-provenance-consumer"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[features]
+parallel-stock = ["ascent/par"]
+
+[dependencies]
+ascent = { version = "=0.8.1", default-features = false }
+ascent-provenance = { path = "../../ascent-provenance" }
+source-fixture = { path = "source-fixture" }

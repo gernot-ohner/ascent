@@ -9,3 +9,6 @@ description = "Why and positive Boolean provenance for unmodified Ascent"
 [dependencies]
 ascent.workspace = true
 ascent-provenance-macros = { version = "=0.1.0", path = "../ascent-provenance-macros" }
+
+[dev-dependencies]
+ascent-byods-rels = { version = "=0.8.1", default-features = false }
