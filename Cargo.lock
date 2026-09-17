@@ -44,6 +44,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ascent-provenance-macros"
+version = "0.1.0"
+dependencies = [
+ "ascent",
+ "derive-syn-parse",
+ "duplicate",
+ "itertools",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
 name = "ascent_base"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

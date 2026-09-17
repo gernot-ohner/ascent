@@ -9,3 +9,12 @@ Transferred from the provenance experiment at commit
 
 - `ascent-provenance/src/why_provenance.rs`: transferred from
   `ascent_base/src/why_provenance.rs`, with public Ascent imports.
+- `syntax.rs`: declaration, rule, clause, signature and source callback parsers
+  selected from `ascent_macro/src/ascent_syntax.rs`; token emission is new.
+  Source callback boundaries use parser cursors rather than span equality.
+- `expand.rs`: local rule-macro substitution/hygiene, bound-variable visitors
+  and disjunction expansion selected from that same syntax file.
+- `syntax_utils.rs`: required Rust expression/pattern visitors from
+  `ascent_macro/src/syn_utils.rs`, and punctuated/token/span helpers from
+  `ascent_macro/src/utils.rs`. The local `update` helper uses `mem::take`.
+  No dependency analysis, index planner, or evaluator was extracted.

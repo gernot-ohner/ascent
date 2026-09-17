@@ -1,0 +1,21 @@
+[package]
+name = "ascent-provenance-macros"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Frontend and lowering for external Ascent provenance"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2", features = ["full", "extra-traits", "visit-mut"] }
+quote = "1"
+proc-macro2 = "1"
+itertools = "0.15"
+derive-syn-parse = "0.2"
+duplicate = { version = "2", default-features = false }
+
+[dev-dependencies]
+ascent.workspace = true
