@@ -1,0 +1,10 @@
+[package]
+name = "ascent-provenance"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Why and positive Boolean provenance for unmodified Ascent"
+
+[dependencies]
+ascent.workspace = true
