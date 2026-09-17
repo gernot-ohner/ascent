@@ -41,6 +41,7 @@ name = "ascent-provenance"
 version = "0.1.0"
 dependencies = [
  "ascent",
+ "ascent-provenance-macros",
 ]
 
 [[package]]

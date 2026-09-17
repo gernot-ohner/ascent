@@ -159,7 +159,6 @@ impl GenSym {
          },
       }
    }
-   pub fn next_ident(&mut self, ident: &str, span: Span) -> Ident { Ident::new(&self.next(ident), span) }
    pub fn new(transformer: fn(&str) -> String) -> Self { Self(Default::default(), transformer) }
 }
 

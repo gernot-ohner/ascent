@@ -196,7 +196,7 @@ impl Parse for DisjunctionNode {
 
 #[derive(Parse, Clone)]
 pub struct GeneratorNode {
-   pub for_keyword: Token![for],
+   pub _for_keyword: Token![for],
    #[call(Pat::parse_multi)]
    pub pattern: Pat,
    pub _in_keyword: Token![in],
@@ -330,7 +330,7 @@ impl Parse for BodyClauseNode {
 
 #[derive(Parse, Clone)]
 pub struct NegationClauseNode {
-   neg_token: Token![!],
+   _neg_token: Token![!],
    pub rel: Ident,
    #[paren]
    _rel_arg_paren: syn::token::Paren,
@@ -471,7 +471,7 @@ pub struct MacroDefNode {
 
 #[derive(Parse)]
 pub struct IncludeSourceNode {
-   pub include_source_kw: kw::include_source,
+   pub _include_source_kw: kw::include_source,
    _bang: Token![!],
    #[paren]
    _arg_paren: syn::token::Paren,

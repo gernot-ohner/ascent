@@ -17,6 +17,18 @@ fn macro_hidden_negation_is_rejected() {
         output(x) <-- input(x), absent!(x);
     }, "aggregation or negation");
 }
+
+#[test]
+fn unsupported_wrapper_attributes_and_mismatched_signatures_are_errors() {
+    for tokens in [
+        quote! { #[derive(Clone)] struct P; relation input(i32); },
+        quote! { #[repr(C)] struct P; relation input(i32); },
+        quote! { #[cfg_attr(all(), derive(Clone))] struct P; relation input(i32); },
+        quote! { struct P; impl Q; relation input(i32); },
+    ] {
+        assert!(crate::expand(tokens, false).is_err());
+    }
+}
 #[test]
 fn provenance_attribute_validation_errors_are_source_level() {
    assert_ascent_error(
