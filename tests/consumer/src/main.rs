@@ -72,7 +72,7 @@ fn main() {
     #[cfg(feature = "parallel-stock")]
     {
         let mut parallel = Parallel::default();
-        parallel.input = vec![(1,)];
+        parallel.input = vec![(1,)].into_iter().collect();
         parallel.run();
         assert_eq!(parallel.output, vec![(1,)]);
     }
