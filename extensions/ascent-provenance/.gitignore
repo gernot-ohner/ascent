@@ -1,0 +1,6 @@
+/target/
+/tests/consumer/target/
+
+# Keep the independent workspace and consumer dependency resolutions pinned.
+!/Cargo.lock
+!/tests/consumer/Cargo.lock
