@@ -1,6 +1,7 @@
 # September 26, 2026: normalization and explanation scaling
 
-Compared baseline `bd8ec04` with the readiness changes using the identical
+Compared [baseline `bd8ec04`](https://github.com/gernot-ohner/ascent/tree/bd8ec0498272d2d7383b55646fc08ba5a255b004)
+with the initial readiness changes using the identical
 `scaling.rs` harness. Machine: Apple M1 Pro, 8 CPU cores, 32 GiB memory,
 macOS 26.6.2. Compiler: rustc 1.85.0 (4d91de4e4), release profile, locked registry
 Ascent 0.8.1. Each row is the median of five fresh-instance samples after one

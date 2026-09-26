@@ -52,7 +52,6 @@ name = "ascent-provenance-macros"
 version = "0.1.0"
 dependencies = [
  "derive-syn-parse",
- "duplicate",
  "itertools",
  "proc-macro2",
  "quote",

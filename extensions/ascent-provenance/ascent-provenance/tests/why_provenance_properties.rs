@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
-use ascent::{Lattice};
+use ascent::Lattice;
 use ascent_provenance::{WhyProvenance, provenance};
 
 type Node = u8;
@@ -194,7 +194,11 @@ fn every_bounded_input_batch_normalizes_and_reruns_idempotently() {
 
             let before_rerun = (program.input.clone(), program.output.clone());
             program.run();
-            assert_eq!((std::mem::take(&mut program.input), std::mem::take(&mut program.output)), before_rerun, "unchanged rerun for {case}");
+            assert_eq!(
+               (std::mem::take(&mut program.input), std::mem::take(&mut program.output)),
+               before_rerun,
+               "unchanged rerun for {case}"
+            );
          }
       }
    }

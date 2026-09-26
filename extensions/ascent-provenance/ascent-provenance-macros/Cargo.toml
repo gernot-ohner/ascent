@@ -16,7 +16,6 @@ quote = "1"
 proc-macro2 = { version = "1", features = ["span-locations"] }
 itertools = "0.15"
 derive-syn-parse = "0.2"
-duplicate = { version = "2", default-features = false }
 
 [dev-dependencies]
 ascent.workspace = true

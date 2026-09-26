@@ -168,10 +168,12 @@ Custom storage providers are supported for ordinary relations, including
 program-wide provider selection; annotated relations use stock lattice vectors.
 
 In named programs, `Self` in relation types and rule expressions refers to the
-public program, including inherent helpers, qualified trait paths and patterns.
+public program, including inherent helpers, generic bounds, qualified trait paths and patterns.
 Nested Rust items retain their own `Self` scope. Standard expression macros
 (such as `vec![Self::BASE]`, assertions and formatting) and repeated `vec!`
-expressions are supported. `stringify!` preserves its literal tokens. In
+expressions are supported. Standard `matches!` supports expressions, pattern
+alternatives, optional guards and trailing commas, including qualified
+`core::matches!` and `std::matches!`. `stringify!` preserves its literal tokens. In
 custom macros, write the explicit program type, such as
 `Program::helper()`; an explicit `Self` that cannot be parsed receives a diagnostic.
 Unqualified standard macro names must refer to the standard macros, not custom

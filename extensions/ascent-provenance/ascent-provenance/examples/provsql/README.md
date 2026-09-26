@@ -1,6 +1,6 @@
 # Compare why and Boolean provenance with ProvSQL
 
-From the repository root:
+From `extensions/ascent-provenance/` in the repository:
 
 ```sh
 python3 ascent-provenance/examples/provsql/compare.py

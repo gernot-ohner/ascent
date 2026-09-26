@@ -24,10 +24,26 @@ empty. Runs are serial to avoid benchmark contention. Each case has a 180-second
 external timeout; timing out is a failed benchmark, never a zero or a skipped pass.
 Use `--no-rss` when macOS sandbox permissions block `/usr/bin/time -l`.
 
-For an identical-harness baseline comparison, copy `scaling.rs` into an archived
-baseline's `ascent-provenance/examples/` and pass `--root /path/to/baseline
---label baseline`. Do not change the baseline library. Record commit, hardware,
-compiler, sample count and results alongside the comparison.
+The recorded pre-optimization baseline is published at immutable commit
+[`bd8ec0498272d2d7383b55646fc08ba5a255b004`](https://github.com/gernot-ohner/ascent/tree/bd8ec0498272d2d7383b55646fc08ba5a255b004)
+on the fork's `codex/external-provenance-benchmark-baseline` reference branch.
+It is a standalone workspace at the archive root. From this extension workspace,
+retrieve that exact source and use the same harness for both versions:
+
+```sh
+baseline_dir="$(mktemp -d)"
+curl --fail --location \
+  https://github.com/gernot-ohner/ascent/archive/bd8ec0498272d2d7383b55646fc08ba5a255b004.tar.gz \
+  --output "$baseline_dir/source.tar.gz"
+tar -xzf "$baseline_dir/source.tar.gz" --strip-components=1 -C "$baseline_dir"
+cp ascent-provenance/examples/scaling.rs "$baseline_dir/ascent-provenance/examples/scaling.rs"
+python3 benchmarks/run.py --root "$baseline_dir" --label baseline --samples 5 > "$baseline_dir/baseline.csv"
+python3 benchmarks/run.py --label current --samples 5 > "$baseline_dir/current.csv"
+```
+
+Do not change the baseline library. Record commit, hardware, compiler, sample
+count and results alongside any new comparison. Add `--no-rss` to both runner
+commands if macOS sandbox permissions prevent process memory measurement.
 
 These are bounded synthetic probes, not a general application-performance
 claim. They exclude compile time, multi-relation realistic joins, large tokens,

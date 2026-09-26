@@ -5,8 +5,12 @@ use quote::ToTokens;
 use syn::parse::{Parse, ParseStream, Parser};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::{Attribute, Error, Expr, Generics, Ident, ImplGenerics, Pat, Path, Result, Token, Type, TypeGenerics, Visibility, WhereClause, braced, parenthesized};
-use crate::syntax_utils::{pattern_get_vars, expr_to_ident};
+use syn::{
+   Attribute, Error, Expr, Generics, Ident, ImplGenerics, Pat, Path, Result, Token, Type, TypeGenerics, Visibility,
+   WhereClause, braced, parenthesized,
+};
+
+use crate::syntax_utils::{expr_to_ident, pattern_get_vars};
 
 mod kw {
    use derive_syn_parse::Parse;
@@ -127,14 +131,7 @@ impl Parse for RelationNode {
       if is_lattice && field_types.empty_or_trailing() {
          return Err(input.error("empty lattice is not allowed"));
       }
-      Ok(RelationNode {
-         attrs: vec![],
-         name,
-         field_types,
-         _semi_colon,
-         is_lattice,
-         initialization,
-      })
+      Ok(RelationNode { attrs: vec![], name, field_types, _semi_colon, is_lattice, initialization })
    }
 }
 
@@ -285,8 +282,6 @@ impl CondClause {
          CondClause::Let(cl) => pattern_get_vars(&cl.pattern),
       }
    }
-
-
 }
 impl Parse for CondClause {
    fn parse(input: ParseStream) -> Result<Self> {
@@ -346,7 +341,6 @@ pub enum HeadItemNode {
    #[peek(Ident, name = "head clause")]
    HeadClause(HeadClauseNode),
 }
-
 
 #[derive(Clone)]
 pub struct HeadClauseNode {
@@ -565,94 +559,110 @@ pub(crate) fn parse_ascent_program(
    Ok(Either::Left(AscentProgram { rules, relations, signatures, attributes, macros }))
 }
 
-
 pub(crate) enum Parsed {
-    Program(AscentProgram),
-    Include(TokenStream),
+   Program(AscentProgram),
+   Include(TokenStream),
 }
 
 pub(crate) fn emit_program(program: &AscentProgram) -> TokenStream {
-    let attrs = &program.attributes;
-    let signature = program.signatures.as_ref().map(|s| {
-        let d = &s.declaration;
-        let (attrs, vis, name, generics, bounds) =
-            (&d.attrs, &d.visibility, &d.ident, &d.generics, &d.generics.where_clause);
-        let implementation = s.implementation.as_ref().map(|i| {
-            let (ig, name, tg, bounds) = (&i.impl_generics, &i.ident, &i.generics, &i.generics.where_clause);
-            quote! { impl #ig #name #tg #bounds; }
-        });
-        quote! { #(#attrs)* #vis struct #name #generics #bounds; #implementation }
-    });
-    let relations = program.relations.iter().map(|r| {
-        let (attrs, name, types) = (&r.attrs, &r.name, &r.field_types);
-        let kind = if r.is_lattice { quote!(lattice) } else { quote!(relation) };
-        let init = r.initialization.as_ref().map(|e| quote!(= #e));
-        quote! { #(#attrs)* #kind #name(#types) #init; }
-    });
-    let macros = program.macros.iter().map(|m| {
-        let (name, body) = (&m.name, &m.body);
-        let params = m.params.iter().map(|p| {
-            let name = &p.name;
-            let kind = match &p.kind { MacroParamKind::Expr(k) | MacroParamKind::Ident(k) => k };
-            quote! { $ #name : #kind }
-        });
-        quote! { macro #name(#(#params),*) { #body } }
-    });
-    let rules = program.rules.iter().map(|r| {
-        let heads = r.head_clauses.iter().map(|h| match h {
-            HeadItemNode::HeadClause(c) => c.to_token_stream(),
-            HeadItemNode::MacroInvocation(m) => m.to_token_stream(),
-        });
-        if r.body_items.is_empty() {
-            quote! { {#(#heads),*}; }
-        } else {
-            let body = r.body_items.iter().map(emit_body);
-            quote! { {#(#heads),*} <-- #(#body),*; }
-        }
-    });
-    quote! { #(#attrs)* #signature #(#relations)* #(#macros)* #(#rules)* }
+   let attrs = &program.attributes;
+   let signature = program.signatures.as_ref().map(|s| {
+      let d = &s.declaration;
+      let (attrs, vis, name, generics, bounds) =
+         (&d.attrs, &d.visibility, &d.ident, &d.generics, &d.generics.where_clause);
+      let implementation = s.implementation.as_ref().map(|i| {
+         let (ig, name, tg, bounds) = (&i.impl_generics, &i.ident, &i.generics, &i.generics.where_clause);
+         quote! { impl #ig #name #tg #bounds; }
+      });
+      quote! { #(#attrs)* #vis struct #name #generics #bounds; #implementation }
+   });
+   let relations = program.relations.iter().map(|r| {
+      let (attrs, name, types) = (&r.attrs, &r.name, &r.field_types);
+      let kind = if r.is_lattice { quote!(lattice) } else { quote!(relation) };
+      let init = r.initialization.as_ref().map(|e| quote!(= #e));
+      quote! { #(#attrs)* #kind #name(#types) #init; }
+   });
+   let macros = program.macros.iter().map(|m| {
+      let (name, body) = (&m.name, &m.body);
+      let params = m.params.iter().map(|p| {
+         let name = &p.name;
+         let kind = match &p.kind {
+            MacroParamKind::Expr(k) | MacroParamKind::Ident(k) => k,
+         };
+         quote! { $ #name : #kind }
+      });
+      quote! { macro #name(#(#params),*) { #body } }
+   });
+   let rules = program.rules.iter().map(|r| {
+      let heads = r.head_clauses.iter().map(|h| match h {
+         HeadItemNode::HeadClause(c) => c.to_token_stream(),
+         HeadItemNode::MacroInvocation(m) => m.to_token_stream(),
+      });
+      if r.body_items.is_empty() {
+         quote! { {#(#heads),*}; }
+      } else {
+         let body = r.body_items.iter().map(emit_body);
+         quote! { {#(#heads),*} <-- #(#body),*; }
+      }
+   });
+   quote! { #(#attrs)* #signature #(#relations)* #(#macros)* #(#rules)* }
 }
 
 fn emit_condition(c: &CondClause) -> TokenStream {
-    match c {
-        CondClause::If(c) => { let e = &c.cond; quote!(if #e) }
-        CondClause::IfLet(c) => { let (p,e) = (&c.pattern,&c.exp); quote!(if let #p = #e) }
-        CondClause::Let(c) => { let (p,e) = (&c.pattern,&c.exp); quote!(let #p = #e) }
-    }
+   match c {
+      CondClause::If(c) => {
+         let e = &c.cond;
+         quote!(if #e)
+      },
+      CondClause::IfLet(c) => {
+         let (p, e) = (&c.pattern, &c.exp);
+         quote!(if let #p = #e)
+      },
+      CondClause::Let(c) => {
+         let (p, e) = (&c.pattern, &c.exp);
+         quote!(let #p = #e)
+      },
+   }
 }
 
 fn emit_body(b: &BodyItemNode) -> TokenStream {
-    match b {
-        BodyItemNode::Clause(c) => {
-            let (name,args) = (&c.rel,&c.args);
-            let conditions = c.cond_clauses.iter().map(emit_condition);
-            quote!(#name(#args) #(#conditions)*)
-        }
-        BodyItemNode::Generator(g) => {
-            let (p,e) = (&g.pattern,&g.expr); quote!(for #p in #e)
-        }
-        BodyItemNode::Cond(c) => emit_condition(c),
-        BodyItemNode::Negation(n) => { let (r,a) = (&n.rel,&n.args); quote!(!#r(#a)) }
-        BodyItemNode::Agg(a) => {
-            let (p,b,r,args) = (&a.pat,&a.bound_args,&a.rel,&a.rel_args);
-            let f = match &a.aggregator {
-                AggregatorNode::Path(p) => quote!(#p),
-                AggregatorNode::Expr(e) => quote!((#e)),
-            };
-            quote!(agg #p = #f(#b) in #r(#args))
-        }
-        BodyItemNode::MacroInvocation(m) => m.to_token_stream(),
-        BodyItemNode::Disjunction(d) => {
-            let branches = d.disjuncts.iter().map(|items| {
-                let items = items.iter().map(emit_body); quote!(#(#items),*)
-            });
-            quote!((#(#branches)|*))
-        }
-    }
+   match b {
+      BodyItemNode::Clause(c) => {
+         let (name, args) = (&c.rel, &c.args);
+         let conditions = c.cond_clauses.iter().map(emit_condition);
+         quote!(#name(#args) #(#conditions)*)
+      },
+      BodyItemNode::Generator(g) => {
+         let (p, e) = (&g.pattern, &g.expr);
+         quote!(for #p in #e)
+      },
+      BodyItemNode::Cond(c) => emit_condition(c),
+      BodyItemNode::Negation(n) => {
+         let (r, a) = (&n.rel, &n.args);
+         quote!(!#r(#a))
+      },
+      BodyItemNode::Agg(a) => {
+         let (p, b, r, args) = (&a.pat, &a.bound_args, &a.rel, &a.rel_args);
+         let f = match &a.aggregator {
+            AggregatorNode::Path(p) => quote!(#p),
+            AggregatorNode::Expr(e) => quote!((#e)),
+         };
+         quote!(agg #p = #f(#b) in #r(#args))
+      },
+      BodyItemNode::MacroInvocation(m) => m.to_token_stream(),
+      BodyItemNode::Disjunction(d) => {
+         let branches = d.disjuncts.iter().map(|items| {
+            let items = items.iter().map(emit_body);
+            quote!(#(#items),*)
+         });
+         quote!((#(#branches)|*))
+      },
+   }
 }
 pub(crate) fn parse_program(input: TokenStream, callback: Path) -> Result<Parsed> {
-    (|input: ParseStream| match parse_ascent_program(input, callback.clone())? {
-        Either::Left(program) => Ok(Parsed::Program(program)),
-        Either::Right(include) => Ok(Parsed::Include(include.macro_call_output())),
-    }).parse2(input)
+   (|input: ParseStream| match parse_ascent_program(input, callback.clone())? {
+      Either::Left(program) => Ok(Parsed::Program(program)),
+      Either::Right(include) => Ok(Parsed::Include(include.macro_call_output())),
+   })
+   .parse2(input)
 }

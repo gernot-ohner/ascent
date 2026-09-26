@@ -1,11 +1,13 @@
 use std::collections::{HashMap, HashSet};
+
 use itertools::Itertools;
 use proc_macro2::{Span, TokenStream};
 use quote::ToTokens;
-use syn::{Error, Expr, ExprMacro, Ident, Result, Token};
 use syn::parse::{ParseStream, Parser};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
+use syn::{Error, Expr, ExprMacro, Ident, Result, Token};
+
 use crate::syntax::*;
 use crate::syntax_utils::*;
 
@@ -310,10 +312,12 @@ fn rule_expand_macro_invocations(rule: RuleNode, macros: &HashMap<Ident, &MacroD
 }
 
 pub(crate) fn expand_program(prog: &mut AscentProgram) -> Result<()> {
-    let macros = prog.macros.iter().map(|m| (m.name.clone(), m)).collect::<HashMap<_, _>>();
-    let expanded = std::mem::take(&mut prog.rules).into_iter()
-        .map(|r| rule_expand_macro_invocations(r, &macros)).collect::<Result<Vec<_>>>()?;
-    prog.rules = expanded.into_iter().flat_map(rule_desugar_disjunction_nodes).collect();
-    prog.macros.clear();
-    Ok(())
+   let macros = prog.macros.iter().map(|m| (m.name.clone(), m)).collect::<HashMap<_, _>>();
+   let expanded = std::mem::take(&mut prog.rules)
+      .into_iter()
+      .map(|r| rule_expand_macro_invocations(r, &macros))
+      .collect::<Result<Vec<_>>>()?;
+   prog.rules = expanded.into_iter().flat_map(rule_desugar_disjunction_nodes).collect();
+   prog.macros.clear();
+   Ok(())
 }

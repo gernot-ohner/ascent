@@ -7,9 +7,12 @@ within `gernot-ohner/ascent`. The former inline-capture acceptance gate is
 resolved. Ascent source and its parent workspace remain unmodified; the external
 workspace has its own CI workflow. No crate publication is part of this change.
 
-The standalone hashes above identify the source repository's local history;
-they are not commits in this fork's history. Baseline source and benchmark data
-provenance are documented in THIRD_PARTY_NOTICES.md and benchmarks/RESULTS.md.
+The initial readiness hash `bda3860` identifies the standalone source history.
+The pre-optimization baseline `bd8ec04` is now published on the fork's separate
+`codex/external-provenance-benchmark-baseline` branch; it is not an ancestor of
+this PR. See benchmarks/README.md for immutable source retrieval and replay.
+Source attribution and measurement provenance remain in THIRD_PARTY_NOTICES.md
+and benchmarks/RESULTS.md.
 
 ## Result and API decision
 
@@ -20,7 +23,7 @@ provenance are documented in THIRD_PARTY_NOTICES.md and benchmarks/RESULTS.md.
   wrapper rerun/timeout methods are removed; the timeout-generation attribute
   receives an explicit diagnostic. This is an intentional prototype API change.
 - Named `Self` in rule expressions and relation types retains the public program
-  type, including generics, trait-associated types and patterns. Nested Rust
+  type, including generic bounds, trait-associated types and patterns. Nested Rust
   items preserve their own scope. Standard expression macros are supported;
   custom/shadowed macros require explicit program types. `stringify!` keeps
   literal tokens. See README for the macro-opacity boundary.
@@ -33,7 +36,7 @@ provenance are documented in THIRD_PARTY_NOTICES.md and benchmarks/RESULTS.md.
 
 | Check | Result |
 | --- | --- |
-| `cargo +1.85.0 test --workspace --locked --offline` | 58 tests passed, zero warnings. |
+| `cargo +1.85.0 test --workspace --locked --offline` | 62 tests passed, zero warnings. |
 | `python3 tests/inline_capture.py` | Both stock and external caller-local rule captures pass. |
 | `python3 tests/compile_fail.py` | Seven expected diagnostics pass: custom Self macro forms, inline rerun/timeout API, token mismatch, named field move, removed parallel import. |
 | Independent consumer with `--features parallel-stock --locked --offline` | Passes; cross-crate source callbacks and stock parallel coexistence work. |
@@ -41,6 +44,7 @@ provenance are documented in THIRD_PARTY_NOTICES.md and benchmarks/RESULTS.md.
 | Diamond and shortest-path examples | Pass with original expected witnesses. |
 | `cargo +1.85.0 doc --workspace --no-deps --locked --offline` | Passes. |
 | Fresh pinned ProvSQL comparison | All 264 graph-relation comparisons, four actual shortest-path fixtures, extra acyclic tight-edge why comparison and oracle controls pass. |
+| Published baseline replay | Downloaded the immutable GitHub archive; all 16 benchmark smoke cases pass for baseline and current code, with identical tuple/witness counts. Historical timing CSVs unchanged. |
 | Workspace and independent-consumer metadata | All three Ascent packages resolve to registry 0.8.1. |
 | Original integrated experiment and stock checkout | Clean and unchanged at `ad05d27` and `e52c84b`, respectively. |
 
@@ -61,6 +65,36 @@ Observed regression failures before the respective fixes:
 Independent review rechecked the macro fix and found no remaining implementation
 blocker within its bounded review. It explicitly recorded the one-shot inline
 API, opaque-macro boundary, hash-index memory and explicit witness growth limits.
+
+## PR review corrections
+
+The multi-angle review of PR #4 identified two supported-language compatibility
+failures. New regressions reproduced both before their fixes:
+
+- `Self` in declaration and separate implementation bounds referred to the
+  hidden engine. The engine copy now rewrites those bounds to the public type;
+  the wrapper retains its original signature.
+- Qualified standard `core::matches!` with `Self` was rejected as custom syntax.
+  A dedicated parser now visits its expression, pattern alternatives and
+  optional guard. Tests cover qualified/unqualified forms, trailing commas,
+  positive and negative patterns/guards.
+
+An independent reviewer reran both original failing examples after the fixes;
+both compile, run and satisfy their output assertions. The full workspace,
+downstream diagnostics/consumers and documentation checks also pass.
+
+Macro hygiene now collects statement bindings without computing discarded
+immutable free-variable results. The mutable visitor preserves initializer,
+shadowing and let-else scopes, covered by an additional regression. A throwaway
+instrumented parse/expansion probe measured 25 expression visits at nested-block
+depth 20, compared with 5,242,880 before. No instrumentation is shipped. This
+removes redundant work in the external frontend; stock Ascent is unchanged.
+The external macro crate no longer directly depends on `duplicate`.
+
+The extension now passes `cargo +nightly fmt --all --check` under the inherited
+repository configuration. The oracle README names the correct working
+directory, and the exact benchmark baseline is publicly retrievable as described
+in benchmarks/README.md. The historical timing CSVs are unchanged.
 
 ## Performance evidence
 

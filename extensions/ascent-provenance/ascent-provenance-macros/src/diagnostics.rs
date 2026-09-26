@@ -1,44 +1,41 @@
-use crate::tests::program;
 use crate::expand::expand_program;
 use crate::lower::lower;
+use crate::tests::program;
 fn assert_ascent_error(tokens: proc_macro2::TokenStream, expected: &str) {
- let mut p = program(tokens);
- expand_program(&mut p).unwrap();
- let error = lower(p).err().expect("expected validation error");
- assert!(error.to_string().contains(expected), "{error}");
+   let mut p = program(tokens);
+   expand_program(&mut p).unwrap();
+   let error = lower(p).err().expect("expected validation error");
+   assert!(error.to_string().contains(expected), "{error}");
 }
 
 #[test]
 fn macro_hidden_negation_is_rejected() {
-    assert_ascent_error(quote! {
-        #[provenance(&'static str)] relation input(i32);
-        #[provenance(&'static str)] relation output(i32);
-        macro absent($x: ident) { !input($x) }
-        output(x) <-- input(x), absent!(x);
-    }, "aggregation or negation");
+   assert_ascent_error(
+      quote! {
+          #[provenance(&'static str)] relation input(i32);
+          #[provenance(&'static str)] relation output(i32);
+          macro absent($x: ident) { !input($x) }
+          output(x) <-- input(x), absent!(x);
+      },
+      "aggregation or negation",
+   );
 }
 
 #[test]
 fn unsupported_wrapper_attributes_and_mismatched_signatures_are_errors() {
-    for tokens in [
-        quote! { #[derive(Clone)] struct P; relation input(i32); },
-        quote! { #[repr(C)] struct P; relation input(i32); },
-        quote! { #[cfg_attr(all(), derive(Clone))] struct P; relation input(i32); },
-        quote! { struct P; impl Q; relation input(i32); },
-    ] {
-        assert!(crate::expand(tokens, false).is_err());
-    }
+   for tokens in [
+      quote! { #[derive(Clone)] struct P; relation input(i32); },
+      quote! { #[repr(C)] struct P; relation input(i32); },
+      quote! { #[cfg_attr(all(), derive(Clone))] struct P; relation input(i32); },
+      quote! { struct P; impl Q; relation input(i32); },
+   ] {
+      assert!(crate::expand(tokens, false).is_err());
+   }
 }
 #[test]
 fn provenance_attribute_validation_errors_are_source_level() {
-   assert_ascent_error(
-      quote! { #[provenance] relation input(i32); },
-      "expected `#[provenance(TokenType)]`",
-   );
-   assert_ascent_error(
-      quote! { #[provenance(u32, u64)] relation input(i32); },
-      "expected exactly one token type",
-   );
+   assert_ascent_error(quote! { #[provenance] relation input(i32); }, "expected `#[provenance(TokenType)]`");
+   assert_ascent_error(quote! { #[provenance(u32, u64)] relation input(i32); }, "expected exactly one token type");
    assert_ascent_error(
       quote! {
          #[provenance(&'static str)]
@@ -47,15 +44,11 @@ fn provenance_attribute_validation_errors_are_source_level() {
       },
       "multiple `provenance` attributes",
    );
-   assert_ascent_error(
-      quote! { #[provenance(&'static str)] lattice input(i32); },
-      "user-declared `lattice`",
-   );
+   assert_ascent_error(quote! { #[provenance(&'static str)] lattice input(i32); }, "user-declared `lattice`");
    assert_ascent_error(
       quote! { #[provenance(&'static str)] #[ds(foo)] relation input(i32); },
       "custom data structure providers",
    );
-
 }
 
 #[test]
@@ -69,14 +62,13 @@ fn provenance_program_setting_is_validated() {
    ] {
       assert_ascent_error(
          quote! { #attribute #[provenance(u8)] relation input(u8); },
-            "expected `#![provenance(boolean)]`",
+         "expected `#![provenance(boolean)]`",
       );
    }
    assert_ascent_error(
       quote! { #![provenance(boolean)] #![provenance(boolean)] relation input(u8); },
       "multiple program-level `provenance` attributes",
    );
-
 }
 
 #[test]

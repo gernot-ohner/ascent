@@ -5,8 +5,8 @@ use proc_macro2::{Ident, Span};
 use syn::spanned::Spanned;
 use syn::{Attribute, Error, Expr, Path, Type, parse_quote, parse_quote_spanned};
 
-use crate::syntax::{AscentProgram, BodyClauseArg, BodyItemNode, HeadItemNode, RelationNode};
 use crate::expand::body_item_get_bound_vars;
+use crate::syntax::{AscentProgram, BodyClauseArg, BodyItemNode, HeadItemNode, RelationNode};
 
 const PROVENANCE_ATTR: &str = "provenance";
 
@@ -22,8 +22,11 @@ pub(crate) fn lower(mut prog: AscentProgram) -> syn::Result<LoweredProgram> {
       boolean = true;
    }
    prog.attributes.retain(|attr| !attr.path().is_ident(PROVENANCE_ATTR));
-   let provenance_type: Path =
-      if boolean { parse_quote!(::ascent_provenance::BooleanProvenance) } else { parse_quote!(::ascent_provenance::WhyProvenance) };
+   let provenance_type: Path = if boolean {
+      parse_quote!(::ascent_provenance::BooleanProvenance)
+   } else {
+      parse_quote!(::ascent_provenance::WhyProvenance)
+   };
    let mut annotation_types = Vec::<(usize, Type)>::new();
 
    for (index, relation) in prog.relations.iter_mut().enumerate() {
@@ -44,14 +47,13 @@ pub(crate) fn lower(mut prog: AscentProgram) -> syn::Result<LoweredProgram> {
       relation.attrs.retain(|attr| !attr.meta.path().is_ident(PROVENANCE_ATTR));
       annotation_types.push((index, parse_quote_spanned! {attr.span()=> #provenance_type<#token_type>}));
       relation.is_lattice = true;
-
    }
 
    if annotation_types.is_empty() {
       return Ok(LoweredProgram { program: prog, annotated: vec![] });
    }
 
-   let tracked = annotation_types.iter().map(|(i,_)| prog.relations[*i].name.to_string()).collect::<HashSet<_>>();
+   let tracked = annotation_types.iter().map(|(i, _)| prog.relations[*i].name.to_string()).collect::<HashSet<_>>();
 
    // Keep declarations at logical arity until every rule has used the existing validator.
    let mut rules = std::mem::take(&mut prog.rules);
@@ -101,7 +103,9 @@ pub(crate) fn lower(mut prog: AscentProgram) -> syn::Result<LoweredProgram> {
       let mut body_annotations = Vec::new();
       for body_item in rule.body_items.iter_mut() {
          match body_item {
-            BodyItemNode::Clause(clause) if tracked.contains(&prog_get_relation(&prog, &clause.rel, clause.args.len())?.name.to_string()) => {
+            BodyItemNode::Clause(clause)
+               if tracked.contains(&prog_get_relation(&prog, &clause.rel, clause.args.len())?.name.to_string()) =>
+            {
                let annotation_expr = if annotated_head.is_some() {
                   let annotation = fresh_annotation_ident(&forbidden_names, &mut annotation_counter);
                   body_annotations.push(annotation.clone());
@@ -112,7 +116,8 @@ pub(crate) fn lower(mut prog: AscentProgram) -> syn::Result<LoweredProgram> {
                clause.args.push(BodyClauseArg::Expr(annotation_expr));
             },
             BodyItemNode::Agg(aggregate)
-               if tracked.contains(&prog_get_relation(&prog, &aggregate.rel, aggregate.rel_args.len())?.name.to_string()) =>
+               if tracked
+                  .contains(&prog_get_relation(&prog, &aggregate.rel, aggregate.rel_args.len())?.name.to_string()) =>
             {
                aggregate.rel_args.push(parse_quote_spanned! {aggregate.rel.span()=> _});
             },
@@ -187,22 +192,28 @@ fn body_item_span(item: &BodyItemNode) -> Span {
 }
 
 pub(crate) struct AnnotatedRelation {
-    pub name: Ident,
-    pub key_types: Vec<Type>,
-    pub annotation_type: Type,
+   pub name: Ident,
+   pub key_types: Vec<Type>,
+   pub annotation_type: Type,
 }
 pub(crate) struct LoweredProgram {
-    pub program: AscentProgram,
-    pub annotated: Vec<AnnotatedRelation>,
+   pub program: AscentProgram,
+   pub annotated: Vec<AnnotatedRelation>,
 }
 
 // Logical lookup only: no HIR, indexes, or dependency analysis.
 fn prog_get_relation<'a>(prog: &'a AscentProgram, name: &Ident, arity: usize) -> syn::Result<&'a RelationNode> {
-    let relation = prog.relations.iter().rev().find(|r| name == &r.name)
-        .ok_or_else(|| Error::new(name.span(), format!("relation `{name}` is not defined")))?;
-    if relation.field_types.len() != arity {
-        return Err(Error::new(name.span(), format!(
-            "wrong arity for relation `{name}` (expected {}, found {arity})", relation.field_types.len())));
-    }
-    Ok(relation)
+   let relation = prog
+      .relations
+      .iter()
+      .rev()
+      .find(|r| name == &r.name)
+      .ok_or_else(|| Error::new(name.span(), format!("relation `{name}` is not defined")))?;
+   if relation.field_types.len() != arity {
+      return Err(Error::new(
+         name.span(),
+         format!("wrong arity for relation `{name}` (expected {}, found {arity})", relation.field_types.len()),
+      ));
+   }
+   Ok(relation)
 }
