@@ -6,7 +6,8 @@ The macros emit ordinary lattice programs for **unmodified registry Ascent
 
 Named programs provide normalized inputs, reruns and timeouts. Inline programs
 execute once in the caller's scope, including local captures in rule bodies.
-See [verification](VERIFICATION.md) and [scaling measurements](benchmarks/README.md).
+Start with the [491-line review guide](REVIEW_GUIDE.md) for the design and a bounded
+source reading path. See [verification](VERIFICATION.md) and [scaling measurements](benchmarks/README.md).
 
 ## Repository layout
 
