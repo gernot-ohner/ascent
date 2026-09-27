@@ -25,12 +25,14 @@ ascent! {
    pub struct Explicit;
    relation alloc(Id,Id); relation assign(Id,Id);
    relation load(Id,u32,Id); relation store(Id,u32,Id);
+   relation edge(Id,Id);
    relation vpt(Id,Id);
-   vpt(x,y) <-- alloc(x,y);
-   vpt(x,y) <-- assign(x,y);
-   vpt(y,p) <-- store(x,f,y), load(p,f,q), vpt(x,q);
-   vpt(y,x), vpt(x,x) <-- vpt(x,y);
-   vpt(x,z) <-- vpt(x,y), vpt(y,z);
+   edge(x,y) <-- alloc(x,y);
+   edge(x,y) <-- assign(x,y);
+   edge(y,p) <-- store(x,f,y), load(p,f,q), vpt(x,q);
+   edge(y,x) <-- edge(x,y);
+   vpt(x,y), vpt(x,x) <-- edge(x,y);
+   vpt(x,z) <-- vpt(x,y), edge(y,z);
 }
 provenance! {
    #![provenance(boolean)]
@@ -39,12 +41,14 @@ provenance! {
    #[provenance(usize)] relation assign(Id,Id);
    #[provenance(usize)] relation load(Id,u32,Id);
    #[provenance(usize)] relation store(Id,u32,Id);
+   #[provenance(usize)] relation edge(Id,Id);
    #[provenance(usize)] relation vpt(Id,Id);
-   vpt(x,y) <-- alloc(x,y);
-   vpt(x,y) <-- assign(x,y);
-   vpt(y,p) <-- store(x,f,y), load(p,f,q), vpt(x,q);
-   vpt(y,x), vpt(x,x) <-- vpt(x,y);
-   vpt(x,z) <-- vpt(x,y), vpt(y,z);
+   edge(x,y) <-- alloc(x,y);
+   edge(x,y) <-- assign(x,y);
+   edge(y,p) <-- store(x,f,y), load(p,f,q), vpt(x,q);
+   edge(y,x) <-- edge(x,y);
+   vpt(x,y), vpt(x,x) <-- edge(x,y);
+   vpt(x,z) <-- vpt(x,y), edge(y,z);
 }
 
 // Identical loading for each engine; only the last column differs.
