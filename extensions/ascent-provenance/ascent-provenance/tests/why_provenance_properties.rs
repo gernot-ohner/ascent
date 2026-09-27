@@ -1,12 +1,22 @@
 use std::cmp::Ordering;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use ascent::Lattice;
-use ascent_provenance::WhyProvenance;
+use ascent_provenance::{WhyProvenance, provenance};
 
+type Node = u8;
 type Token = u8;
 type Witness = BTreeSet<Token>;
 type Witnesses = BTreeSet<Witness>;
+
+provenance! {
+   struct NormalizedCopy;
+
+   #[provenance(Token)] relation input(Node);
+   #[provenance(Token)] relation output(Node);
+
+   output(x) <-- input(x);
+}
 
 fn single_witness(tokens: &Witness) -> WhyProvenance<Token> {
    tokens
@@ -132,6 +142,62 @@ fn every_finite_domain_triple_obeys_lattice_and_product_laws() {
             assert_eq!(
                distributed_left, distributed_right,
                "left distributivity for values {left_index}, {middle_index}, and {right_index}"
+            );
+         }
+      }
+   }
+}
+
+fn lifecycle_choice(choice: usize) -> Option<(Node, WhyProvenance<Token>)> {
+   if choice == 0 {
+      return None;
+   }
+
+   let choice = choice - 1;
+   let node = (choice / 5) as Node;
+   let annotation = match choice % 5 {
+      0 => WhyProvenance::default(),
+      1 => WhyProvenance::__one(),
+      2 => WhyProvenance::token(0),
+      3 => WhyProvenance::token(1),
+      4 => WhyProvenance::__product(&WhyProvenance::token(0), &WhyProvenance::token(1)),
+      _ => unreachable!(),
+   };
+   Some((node, annotation))
+}
+
+fn unary_relation_contents(rows: &[(Node, WhyProvenance<Token>)]) -> BTreeMap<Node, Witnesses> {
+   rows.iter().map(|(node, provenance)| (*node, provenance.witnesses().clone())).collect()
+}
+
+#[test]
+fn every_bounded_input_batch_normalizes_and_reruns_idempotently() {
+   for first in 0..11 {
+      for second in 0..11 {
+         for third in 0..11 {
+            let input = [first, second, third].into_iter().filter_map(lifecycle_choice).collect::<Vec<_>>();
+            let mut expected = BTreeMap::<Node, Witnesses>::new();
+            for (node, provenance) in &input {
+               expected.entry(*node).or_default().extend(provenance.witnesses().iter().cloned());
+            }
+            expected.retain(|_, witnesses| !witnesses.is_empty());
+
+            let mut program = NormalizedCopy::default();
+            program.input = input;
+            program.run();
+
+            let case = format!("input choices [{first}, {second}, {third}]");
+            assert_eq!(program.input.len(), expected.len(), "normalized input row count for {case}");
+            assert_eq!(unary_relation_contents(&program.input), expected, "normalized input witnesses for {case}");
+            assert_eq!(program.output.len(), expected.len(), "output row count for {case}");
+            assert_eq!(unary_relation_contents(&program.output), expected, "output witnesses for {case}");
+
+            let before_rerun = (program.input.clone(), program.output.clone());
+            program.run();
+            assert_eq!(
+               (std::mem::take(&mut program.input), std::mem::take(&mut program.output)),
+               before_rerun,
+               "unchanged rerun for {case}"
             );
          }
       }

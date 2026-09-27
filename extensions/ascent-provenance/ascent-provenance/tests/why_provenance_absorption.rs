@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 
-use ascent::Lattice;
-use ascent_provenance::BooleanProvenance as Why;
+use ascent::{Dual, Lattice};
+use ascent_provenance::{BooleanProvenance as Why, provenance, provenance_run};
 
 fn from_mask(mask: u8) -> Why<u8> {
    (0..3)
@@ -62,4 +62,55 @@ fn boolean_lattice_matches_all_three_token_truth_tables() {
          }
       }
    }
+}
+
+provenance! {
+   #![provenance(boolean)]
+   struct Boolean;
+   #[provenance(u8)] relation input(u8);
+   #[provenance(u8)] relation copied(u8);
+   #[provenance(u8)] relation product(u8);
+   #[provenance(u8)] relation identity(u8);
+   relation background(u8);
+   lattice minimum(u8, Dual<u8>);
+
+   copied(x) <-- input(x);
+   product(x) <-- input(x), input(x);
+   identity(x) <-- background(x);
+   minimum(0, Dual(*x)) <-- background(x);
+}
+
+#[test]
+fn boolean_program_setting_normalizes_inputs_and_first_insertions_without_changing_background() {
+   for values in [vec![3, 1, 2], vec![2, 1, 3]] {
+      let mut program = Boolean::default();
+      program.input = values.into_iter().map(|mask| (0, from_mask(mask))).collect();
+      program.input.push((1, Why::default()));
+      program.background = vec![(1,), (2,)];
+      program.run();
+      for rows in [&program.input, &program.copied, &program.product] {
+         assert_eq!(rows.len(), 1);
+         assert_eq!(masks(&rows[0].1), BTreeSet::from([1, 2]));
+      }
+      assert!(program.identity.iter().all(|(_, why)| masks(why) == BTreeSet::from([0])));
+      assert_eq!(program.identity.len(), 2);
+      assert_eq!(program.minimum, vec![(0, Dual(1))]);
+      let before = program.product.clone();
+      program.run();
+      assert_eq!(program.product, before);
+   }
+}
+
+#[test]
+fn inline_boolean_program_absorbs_candidates_from_different_rules() {
+   let result = provenance_run! {
+      #![provenance(boolean)]
+      #[provenance(u8)] relation input(u8) = vec![(0, from_mask(3))];
+      #[provenance(u8)] relation smaller(u8) = vec![(0, from_mask(1))];
+      #[provenance(u8)] relation output(u8);
+      output(x) <-- input(x);
+      output(x) <-- smaller(x);
+   };
+   assert_eq!(result.output.len(), 1);
+   assert_eq!(masks(&result.output[0].1), BTreeSet::from([1]));
 }
