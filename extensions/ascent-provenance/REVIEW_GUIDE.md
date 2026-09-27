@@ -1,112 +1,84 @@
-# Review guide: external why/Boolean provenance
+# External provenance: notes for review
 
-For [PR #4](https://github.com/gernot-ohner/ascent/pull/4), targeting `master` in
-the same fork. This guide asks for a focused review of the semantics and the
-external implementation strategy. It selects **491 source lines**, counting
-comments, imports and blank lines. The four command lines below bring the total
-code reading budget to **495 lines**. All source ranges are pinned to implementation
-commit `67fd01d`; this guide adds documentation without changing that code.
+[PR #4](https://github.com/gernot-ohner/ascent/pull/4) adds why and Boolean
+provenance through two crates on top of Ascent 0.8.1. The macros add an annotation
+column to each tracked relation and translate its rules into ordinary lattice
+rules. Stock Ascent handles the joins, indexes and execution. Ascent itself does
+not change.
 
-**What the change is meant to do**
+Why mode keeps every distinct set of input tokens used by a derivation. Boolean
+mode drops supersets: `{{a}, {a,b}}` becomes `{{a}}`. Neither preserves repeated
+use of an input or the number of derivations. For example, `ab`, `a²b` and `2ab`
+all give `{{a,b}}`. How-provenance will need a different representation.
 
-Two standalone crates turn annotated Ascent rules into ordinary lattice rules
-for **unmodified registry Ascent 0.8.1**. The external macro handles syntax and
-annotation propagation. Stock Ascent owns storage, indexes, joins, scheduling
-and execution. The extension is a nested, independent Cargo workspace; the
-parent compiler, runtime and workspace are unchanged.
+The following sections cover **491 lines**, including comments and blank lines.
+The links point to commit `67fd01d`, so the line numbers will stay fixed.
 
-An explanation is a set of application-supplied input tokens. Joint premises
-combine their token sets; alternative derivations produce alternative sets.
+| Read in this order | Lines | What it does |
+| --- | ---: | --- |
+| 1. [tests.rs:92-115](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance-macros/src/tests.rs#L92-L115) | 24 | Runs a diamond graph through stock Ascent and checks both route witnesses. |
+| 2. [why_provenance.rs:1-127](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs#L1-L127) | 127 | Defines the two annotation types and their operations. |
+| 3. [lib.rs:23-36](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance-macros/src/lib.rs#L23-L36) | 14 | Parses the program, expands macros and disjunctions, then translates the rules. |
+| 4. [lower.rs:13-155](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L13-L155) and [lower.rs:173-184](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L173-L184) | 155 | Adds annotation columns and multiplies premise annotations to form each head annotation. |
+| 5. [normalize.rs:5-32](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance-macros/src/normalize.rs#L5-L32) | 28 | Merges duplicate input keys and removes zero annotations before indexing. |
+| 6. [wrapper.rs:103-180](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance-macros/src/wrapper.rs#L103-L180) | 78 | Emits the wrapper and calls stock `ascent!` or `ascent_run!`. |
+| 7. [why_provenance_absorption.rs:1-65](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance/tests/why_provenance_absorption.rs#L1-L65) | 65 | Checks Boolean operations against three-token truth tables. The alias `Why` here means `BooleanProvenance`. |
+| **Total** | **491** | |
 
-| Mode | Meaning | Example |
-| --- | --- | --- |
-| Why, the default | All distinct derivation-support sets, including supersets | `{{a}, {a,b}}` retains both witnesses. |
-| Positive Boolean | Only inclusion-minimal supports, representing a monotone Boolean function | `{{a}, {a,b}}` becomes `{{a}}`, equivalent to `a OR (a AND b) = a`. |
+In the diamond test, `run_stock` writes the translated program into a separate
+consumer crate, compiles it and runs the assertion. The helper lies outside the
+selected range.
 
-Zero has no witnesses; one contains the empty witness. Ordinary premises are
-fixed background and contribute one. Both modes discard derivation multiplicity
-and repeated token use. **This is not how-provenance:** `2a²b` and `ab` both become
-the single witness `{{a,b}}`.
+For each logical tuple, Ascent joins the annotations from alternative
+derivations. Within a rule, the product combines tokens from its tracked
+premises. A body with no tracked premises contributes one: a single empty witness.
+Why's lattice meet is intersection of alternatives; it is distinct from this
+product. Boolean meet and product both mean conjunction.
 
-**Read these sections in order, then stop**
+Two details are easy to miss. First, inserting a new tuple can bypass lattice
+join, so Boolean products must already have their supersets removed. Second,
+input vectors can contain duplicate keys. The normalizer joins their annotations
+before Ascent builds indexes. Its hash map stores cloned keys and uses equality
+to resolve collisions.
 
-The links select exact ranges; the rest of each file is outside this reading
-assignment. Items 1 and 7 are tests, so the path includes observable behavior as
-well as implementation.
+The wrapper normalizes named-program inputs during `Default` and before the
+first run, which also catches inputs assigned by the caller. An unchanged rerun
+keeps the same engine. Inline programs run once in the caller's scope and return
+owned results. Earlier wrapper code, outside the selected range, handles fresh
+names, public `Self` references and initializer order.
 
-| Step | Source section | Lines | What to check |
-| --- | --- | ---: | --- |
-| 1. One complete example | [tests.rs:92-115](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance-macros/src/tests.rs#L92-L115) | 24 | A diamond graph lowers to stock Ascent and yields exactly the two expected route witnesses. |
-| 2. Annotation algebra | [why_provenance.rs:1-127](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs#L1-L127) | 127 | Alternative union, pairwise token-set product, zero/one, Boolean absorption, ordering and change reporting. |
-| 3. Macro entry | [lib.rs:23-36](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance-macros/src/lib.rs#L23-L36) | 14 | Parse/includes, expand local rule macros and disjunctions, then lower and emit the wrapper. |
-| 4. Rule translation | [lower.rs:13-155](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L13-L155) and [lower.rs:173-184](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L173-L184) | 155 | Tracked relations become lattices; premises acquire annotations; each tracked head receives their product. |
-| 5. Input normalization | [normalize.rs:5-32](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance-macros/src/normalize.rs#L5-L32) | 28 | Drop zero rows and join duplicate logical keys before stock indexing, preserving first-seen order. |
-| 6. Execution boundary | [wrapper.rs:103-180](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance-macros/src/wrapper.rs#L103-L180) | 78 | Generated named programs invoke stock `ascent!`; inline programs invoke stock `ascent_run!`. Normalization surrounds that boundary. |
-| 7. A separate Boolean model | [why_provenance_absorption.rs:1-65](https://github.com/gernot-ohner/ascent/blob/67fd01d0f6ff6bdd18d070b661fb496bccb2ab74/extensions/ascent-provenance/ascent-provenance/tests/why_provenance_absorption.rs#L1-L65) | 65 | All 256 witness families over three tokens reduce to 20 Boolean values; operations and ordering agree with truth tables. Here the alias `Why` means `BooleanProvenance`. |
-| **Total source** | | **491** | |
+Much of the remaining diff is parser and macro-hygiene code adapted from Ascent,
+plus tests, examples, lockfiles and documentation. The [attribution note](THIRD_PARTY_NOTICES.md)
+lists the source files. Keeping this frontend in sync with Ascent is a maintenance
+cost; the extension is currently tied to 0.8.1.
 
-**The invariants behind those sections**
+The [verification record](VERIFICATION.md) reports 62 passing workspace tests.
+They check the algebra against separate set and truth-table models, and Boolean
+reachability against a walk enumerator on all 512 directed three-node graphs.
+CI also builds independent consumers. A manual [ProvSQL comparison](ascent-provenance/examples/provsql/README.md)
+passed 264 complete relation comparisons and four shortest-path cases. For
+Boolean mode, it evaluates every input-label assignment with `sr_boolean` and
+compares the minimal true sets. Deliberately wrong or missing witnesses must
+fail the comparison.
 
-- **Translation:** the intended invariant is one logical tuple paired with its
-  accumulated annotation. A rule match multiplies the annotations of tracked
-  premises; stock lattice insertion joins alternative contributions to the same
-  head tuple. A body with no tracked premises contributes one. Logical arity is checked
-  before adding annotation columns. Negation and aggregation are rejected for
-  annotated heads after local macro expansion.
-- **Algebra:** why join is union of witness alternatives; its lattice meet is
-  intersection, which is distinct from rule-body multiplication. Boolean join
-  removes absorbed supersets and its meet is conjunction/product. A new row can
-  enter stock storage without calling join, so Boolean products must already be
-  minimized. The `changed` result matters to fixed-point scheduling.
-- **Initialization:** user vectors may contain several annotations for the same
-  key or zero annotations. Normalization establishes valid tracked input rows
-  before indexing. The hash map locates output positions; it still checks key
-  equality. Expected-linear key grouping excludes witness union work and
-  adversarial collisions, and stores cloned keys.
-- **Lifecycle:** earlier wrapper setup, omitted from the path, generates fresh
-  names, preserves public `Self` paths and arranges initializer evaluation once
-  in relation-name order. The selected section normalizes named defaults and
-  caller-assigned inputs before first execution. Unchanged reruns retain the
-  engine. Inline execution remains in the caller's scope and returns owned
-  one-shot results. It has no rerun or timeout API.
+The main restrictions are:
 
-The diamond test's omitted `run_stock` helper writes the lowered program into
-a separate consumer, invokes registry Ascent through `ascent::ascent!`, and
-executes the assertion. It does not compare generated text alone. These
-invariants are the reasoning to scrutinize, not a claimed correctness proof.
+- Why mode supports recursion only with acyclic derivations. The implementation
+  does not reliably detect unsupported cycles. Boolean recursion allows cycles with
+  finite reachable data and monotone rules.
+- Ordinary relations are fixed background. Passing through one loses upstream
+  annotations. Tracked negation and aggregation are unsupported. The shortest-path
+  example explains routes attaining a fixed distance, not the absence of a shorter route.
+- After changing relation storage following a run, or after a timeout or panic,
+  use a fresh instance. There is no incremental maintenance or parallel provenance.
 
-**What the remaining diff contains**
+Performance still limits the use of explicit witnesses. In the [recorded benchmarks](benchmarks/RESULTS.md),
+normalization and indexing of 32,000 inputs fell from 173.816 ms to 7.503 ms.
+But 4,096 minimal witnesses took 2.131 ms in why mode and 417.753 ms in Boolean
+mode. Enumerating witnesses can require exponential output; subset checks add
+further cost. These measurements use small synthetic workloads.
 
-The parser, local-rule-macro expansion and Rust expression visitors are
-extracted/adapted frontend code. That is a maintenance dependency on Ascent
-0.8.1, not a second evaluator. The omitted `self_paths.rs` handles named-program
-Rust scope compatibility. Tests, examples, the ProvSQL adapter, two lockfiles,
-CI and documentation account for much of the remaining diff. This focused path
-does not constitute an audit of the omitted parser/hygiene code. The
-[source attribution](THIRD_PARTY_NOTICES.md) identifies its origins.
-
-**Evidence already obtained, and its limits**
-
-The [verification record](VERIFICATION.md) reports 62 passing workspace tests
-after the review fixes. CI includes exhaustive bounded algebra tests, Boolean
-reachability on all 512 directed three-node graphs in both input orders, small
-acyclic why cases, and independent consumer/compatibility checks.
-
-A separate, manually run [ProvSQL comparison](ascent-provenance/examples/provsql/README.md)
-passed 264 complete graph-relation comparisons and four shortest-path fixtures.
-Why results are compared with `sr_why`; Boolean results are checked against all
-input-label truth assignments through `sr_boolean`, then reduced to minimal true
-supports. Deliberately wrong/missing witnesses must fail the same comparator.
-This is bounded independent-engine evidence, with an adapter we must still trust.
-
-[Recorded release measurements](benchmarks/RESULTS.md) show the normalization
-change reducing the 32,000-input case from 173.816 ms to 7.503 ms, including stock
-index construction. Explicit explanation counts can grow exponentially. Boolean
-minimization adds substantial overhead: the 4,096-minimal-witness fixture takes
-2.131 ms in why mode and 417.753 ms in Boolean mode. These are synthetic timings,
-not a plain-Ascent overhead comparison or a production scalability claim.
-
-To reproduce selected checks, starting at the repository root:
+To run the checks from the repository root:
 
 ```sh
 cd extensions/ascent-provenance
@@ -115,35 +87,16 @@ python3 ascent-provenance/examples/provsql/compare.py
 python3 benchmarks/run.py --samples 5 --no-rss > /tmp/ascent-provenance-perf.csv
 ```
 
-The ProvSQL command requires Docker; its README records the pinned reference
-image. ProvSQL comparisons and timing benchmarks are manual, not current CI gates.
+The ProvSQL command needs Docker. It and the timing benchmarks run manually.
 
-**Scope that affects the review**
+For how-provenance, a later backend would record grounded rule matches and
+premise occurrences before their multiplicities disappear. It could reuse the
+frontend and stock-Ascent integration. Capturing those matches and building an
+expression graph remain future work.
 
-Why recursion has an acyclic-derivation reference contract; unsupported cycles
-need not produce a diagnostic. Boolean cycles require finite reachable data and
-the documented monotonicity assumptions. Crossing an ordinary relation discards
-upstream annotations. Arbitrary nonmonotone Rust/custom-lattice behavior is outside
-the reference contract. The shortest-path demo explains attainment of fixed
-distances, not the absence of a shorter route.
+The two questions for review are:
 
-After any relation-storage mutation following execution, construct a fresh named
-instance. A timed-out or panicked instance must also be discarded. This is not
-incremental maintenance. Parallel provenance, tracked negation/aggregation and
-how-provenance are outside this PR.
-
-An expression-based how backend would need to capture distinct grounded rule
-matches and premise occurrences before multiplicities disappear. The frontend,
-stock integration and tests can be reused; the current witness representation
-cannot recover that information. Such a backend is future work, not validated
-by the passing why/Boolean tests.
-
-**Most useful feedback**
-
-1. Does the annotation algebra plus this lowering support the stated semantics,
-   particularly first insertion, multiple contributions and recursive scheduling?
-2. Is the external lattice-based route a reasonable boundary for these modes,
-   given the frontend/version coupling and lifecycle restrictions?
-3. Is there a small counterexample or missing independent check that would most
-   efficiently challenge the claimed contract, or a frontend decision that would
-   obstruct later capture of rule matches for how-provenance?
+1. Is there a counterexample to the annotation propagation, especially when
+   several rules contribute to one tuple or recursion revisits it?
+2. Is this a useful external extension, given the frontend coupling and API
+   restrictions? Does any part make later capture of rule matches harder?
