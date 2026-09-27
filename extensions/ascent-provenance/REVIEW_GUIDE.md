@@ -11,7 +11,7 @@ adds the OpenJDK example and performance measurements.
 | 1 | [Provenance values](https://github.com/gernot-ohner/ascent/pull/5) | `master` | [Values](reviews/01-values.md) |
 | 2 | [External macros](https://github.com/gernot-ohner/ascent/pull/6) | `codex/provenance-values` | [Macros](reviews/02-macros.md) |
 | 3 | [Validation and benchmarks](https://github.com/gernot-ohner/ascent/pull/7) | `codex/provenance-macros` | [Validation](reviews/03-validation.md) |
-| 4 | OpenJDK test and performance | `codex/provenance-validation` | [OpenJDK](reviews/04-openjdk.md) |
+| 4 | [OpenJDK test and performance](https://github.com/gernot-ohner/ascent/pull/9) | `codex/provenance-validation` | [OpenJDK](reviews/04-openjdk.md) |
 
 Review each PR against its listed base. The second diff contains only what it
 adds to the first; the third contains only what it adds to the second. Each tip

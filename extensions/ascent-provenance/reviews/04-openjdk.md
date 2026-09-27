@@ -1,6 +1,6 @@
 # 4. OpenJDK example and performance
 
-This PR sits above [#7](https://github.com/gernot-ohner/ascent/pull/7). It adds
+[PR #9](https://github.com/gernot-ohner/ascent/pull/9) sits above [#7](https://github.com/gernot-ohner/ascent/pull/7). It adds
 an application test and measurements using the existing OpenJDK facts. It changes
 no provenance library or macro code and adds no dependencies or dataset copy.
 The [overall guide](../REVIEW_GUIDE.md) covers the first three layers.
