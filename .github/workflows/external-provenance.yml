@@ -2,7 +2,7 @@ name: External provenance
 
 on:
   pull_request:
-    branches: [master, 'codex/provenance-values', 'codex/provenance-macros']
+    branches: [master, 'codex/provenance-values', 'codex/provenance-macros', 'codex/provenance-validation']
     paths:
       - 'extensions/ascent-provenance/**'
       - '.github/workflows/external-provenance.yml'
@@ -34,6 +34,7 @@ jobs:
         run: |
           python3 tests/inline_capture.py
           python3 tests/compile_fail.py
+          python3 tests/openjdk_runner.py
           cargo +1.85.0 run --manifest-path tests/consumer/Cargo.toml --features parallel-stock --locked --offline
           python3 tests/relocated_consumer.py
       - name: Build documentation
