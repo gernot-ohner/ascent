@@ -7,9 +7,9 @@ The split changes documentation, commit boundaries and CI branch filters.
 
 | Order | PR | Base | Review guide |
 | --- | --- | --- | --- |
-| 1 | [Provenance values](https://github.com/gernot-ohner/ascent/tree/codex/provenance-values) | `master` | [Values](reviews/01-values.md) |
-| 2 | [External macros](https://github.com/gernot-ohner/ascent/tree/codex/provenance-macros) | `codex/provenance-values` | [Macros](reviews/02-macros.md) |
-| 3 | [Validation and benchmarks](https://github.com/gernot-ohner/ascent/tree/codex/provenance-validation) | `codex/provenance-macros` | [Validation](reviews/03-validation.md) |
+| 1 | [Provenance values](https://github.com/gernot-ohner/ascent/pull/5) | `master` | [Values](reviews/01-values.md) |
+| 2 | [External macros](https://github.com/gernot-ohner/ascent/pull/6) | `codex/provenance-values` | [Macros](reviews/02-macros.md) |
+| 3 | [Validation and benchmarks](https://github.com/gernot-ohner/ascent/pull/7) | `codex/provenance-macros` | [Validation](reviews/03-validation.md) |
 
 Review each PR against its listed base. The second diff contains only what it
 adds to the first; the third contains only what it adds to the second. Each tip
