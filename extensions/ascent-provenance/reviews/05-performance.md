@@ -1,6 +1,6 @@
 # 5. OpenJDK and Boolean product performance
 
-This layer sits above [PR #9](https://github.com/gernot-ohner/ascent/pull/9).
+[PR #10](https://github.com/gernot-ohner/ascent/pull/10) sits above [PR #9](https://github.com/gernot-ohner/ascent/pull/9).
 It makes two small changes in separate commits. Ascent, the external macro and
 public APIs are unchanged. The first commit changes the example and adds its
 tests; the second changes Boolean product normalization. Supporting reports
