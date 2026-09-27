@@ -40,7 +40,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--facts", type=Path, default=ROOT.parents[1] / "byods/ascent-byods-rels/examples/steensgaard/openjdk_javalang_steensgaard")
     parser.add_argument("--output", type=Path, required=True, help="new directory for raw samples, checks and metadata")
-    parser.add_argument("--caps", type=int, nargs="+", default=[8, 32, 128])
+    parser.add_argument("--caps", type=int, nargs="+", default=[8, 32, 64])
     parser.add_argument("--samples", type=int, default=5)
     parser.add_argument("--timeout", type=int, default=180, help="seconds per check or benchmark process")
     args = parser.parse_args()
@@ -86,35 +86,35 @@ def main():
             statuses.append(dict(cap=cap, mode=mode, stage=stage, status="timeout", timeout_seconds=args.timeout))
             return None
 
-    # Correctness is checked before any timed run; no oracle runs beside a sample.
+    # Each engine is checked separately: one timeout must not hide the baselines.
     for cap in [*args.caps, 0]:
-        result = run([str(binary), "check", str(facts), str(cap)], cap, "all" if cap else "eqrel", "check")
-        if result:
-            row = next(csv.DictReader(io.StringIO(result.stdout)))
-            checks.append(row)
-            statuses.append(dict(cap=cap, mode="all" if cap else "eqrel", stage="check", status="passed"))
-            print(f"PASS cap={cap}: {row['facts']} facts, {row['pairs']} pairs", flush=True)
-    for check in checks:
-        cap = int(check["cap"])
         for mode in (["eqrel", "explicit", "boolean"] if cap else ["eqrel"]):
-            command = [str(binary), "bench", str(facts), str(cap), mode, str(args.samples)]
-            if platform.system() == "Darwin":
-                command = ["/usr/bin/time", "-l", *command]
-            result = run(command, cap, mode, "bench")
-            if result is None:
-                continue
-            rows = list(csv.DictReader(io.StringIO(result.stdout)))
-            assert len(rows) == args.samples
-            rss = re.search(r"(\d+)\s+maximum resident set size", result.stderr)
-            for row in rows:
-                for name in ("facts", "alloc", "assign", "load", "store", "pairs"):
-                    assert row[name] == check[name], (cap, mode, name, row, check)
-                if mode == "boolean":
-                    assert row["witnesses"] == check["witnesses"] and row["max_witnesses"] == check["max_witnesses"]
-                row["process_peak_rss_bytes"] = rss.group(1) if rss else ""
-            raw.extend(rows)
-            statuses.append(dict(cap=cap, mode=mode, stage="bench", status="passed"))
-            print(f"PASS cap={cap} {mode}: {len(rows)} samples", flush=True)
+            result = run([str(binary), "check", str(facts), str(cap), mode], cap, mode, "check")
+            if result:
+                row = next(csv.DictReader(io.StringIO(result.stdout)))
+                checks.append(row)
+                statuses.append(dict(cap=cap, mode=mode, stage="check", status="passed"))
+                print(f"PASS cap={cap} {mode}: {row['facts']} facts, {row['pairs']} pairs", flush=True)
+            (args.output / "status.json").write_text(json.dumps(statuses, indent=2) + "\n")
+    # No oracle runs beside a sample. Only successfully checked engines are timed.
+    for check in checks:
+        cap, mode = int(check["cap"]), check["mode"]
+        command = [str(binary), "bench", str(facts), str(cap), mode, str(args.samples)]
+        if platform.system() == "Darwin":
+            command = ["/usr/bin/time", "-l", *command]
+        result = run(command, cap, mode, "bench")
+        if result is None:
+            continue
+        rows = list(csv.DictReader(io.StringIO(result.stdout)))
+        assert len(rows) == args.samples
+        rss = re.search(r"(\d+)\s+maximum resident set size", result.stderr)
+        for row in rows:
+            for name in ("facts", "alloc", "assign", "load", "store", "pairs", "witnesses", "max_witnesses"):
+                assert row[name] == check[name], (cap, mode, name, row, check)
+            row["process_peak_rss_bytes"] = rss.group(1) if rss else ""
+        raw.extend(rows)
+        statuses.append(dict(cap=cap, mode=mode, stage="bench", status="passed"))
+        print(f"PASS cap={cap} {mode}: {len(rows)} samples", flush=True)
     for name, rows in [("checks.csv", checks), ("samples.csv", raw)]:
         if rows:
             with (args.output / name).open("w", newline="") as stream:

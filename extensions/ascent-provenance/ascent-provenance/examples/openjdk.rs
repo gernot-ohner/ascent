@@ -8,7 +8,7 @@ use std::hint::black_box;
 use std::path::Path;
 use std::time::Duration;
 
-use analysis::{Stats, boolean, compact, compact_check, explicit};
+use analysis::{Stats, boolean, compact, explicit};
 use facts::{FILES, Facts};
 
 fn measure(mode: &str, input: &Facts) -> (Duration, Stats) {
@@ -72,23 +72,19 @@ fn main() {
    }
    assert!(
       args.len() >= 4,
-      "usage: openjdk explain | check <facts-dir> <cap> | bench <facts-dir> <cap> <eqrel|explicit|boolean> <samples>; cap 0 is full-data eqrel only"
+      "usage: openjdk explain | check <facts-dir> <cap> [mode] | bench <facts-dir> <cap> <eqrel|explicit|boolean> <samples>; cap 0 is full-data eqrel only"
    );
    let cap: usize = args[3].parse().unwrap();
    let input = Facts::read(Path::new(&args[2])).unwrap().bounded(cap);
    let [alloc, assign, load, store] = input.counts();
    if args[1] == "check" {
-      assert_eq!(args.len(), 4);
-      let stats = if cap == 0 {
-         let (p, _) = compact(&input);
-         compact_check(&input, &p);
-         Stats { pairs: p.pair_count(), witnesses: 0, max_witnesses: 0, field_pairs: 0 }
-      } else {
-         analysis::check(&input)
-      };
-      println!("cap,facts,alloc,assign,load,store,pairs,witnesses,max_witnesses,field_pairs");
+      assert!(args.len() == 4 || args.len() == 5);
+      let mode = args.get(4).map(String::as_str).unwrap_or(if cap == 0 { "eqrel" } else { "all" });
+      assert!(cap != 0 || mode == "eqrel", "full-data checks use eqrel only");
+      let stats = if mode == "all" { analysis::check(&input) } else { analysis::check_mode(&input, mode) };
+      println!("mode,cap,facts,alloc,assign,load,store,pairs,witnesses,max_witnesses,field_pairs");
       println!(
-         "{cap},{},{alloc},{assign},{load},{store},{},{},{},{}",
+         "{mode},{cap},{},{alloc},{assign},{load},{store},{},{},{},{}",
          input.rows.len(),
          stats.pairs,
          stats.witnesses,

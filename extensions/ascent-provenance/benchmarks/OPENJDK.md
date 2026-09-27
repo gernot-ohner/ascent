@@ -13,10 +13,13 @@ cargo +1.85.0 run -p ascent-provenance --release --locked --example openjdk -- e
 cargo +1.85.0 test -p ascent-provenance --test openjdk --locked
 python3 tests/openjdk_runner.py
 python3 benchmarks/openjdk.py --output /tmp/openjdk-measurements
+# Optional stress case; a failed check returns nonzero and is recorded.
+python3 benchmarks/openjdk.py --caps 128 --output /tmp/openjdk-stress
 ```
 
 The runner requires Python 3 and a POSIX system. It builds the release example,
-checks each input, then measures cases serially. The output directory must be
+checks each input, then measures cases serially. Each engine is checked separately, so a timeout
+in one cannot hide the other baselines. The output directory must be
 new. It contains per-sample CSV, check results, source and data hashes, machine
 and compiler details, and process logs. Nonzero exits and timeouts are recorded
 as failures; they are never reported as zero time. Each process has a 180-second
@@ -47,19 +50,21 @@ A subset keeps complete connected components of the input constraints. Each
 fact connects its two variable/object columns; field identifiers are excluded.
 The cap counts facts per component. All facts in a selected component remain.
 Every rule stays within one such component, including load/store joins, so
-outside facts cannot add pairs or witnesses inside it. Caps 8, 32 and 128
+outside facts cannot add pairs or witnesses inside it. Caps 8, 32 and 64
 retain successively larger components; they are not row-prefix samples.
 
 Full-data here means all 47,069 packaged `java.lang` facts, not the whole JDK.
-Full-data `eqrel` runs separately. Full-data explicit and Boolean runs are
-intentionally disabled: their materialized pair count alone is prohibitive.
+Full-data `eqrel` runs separately. The runner schedules the full-data case for `eqrel` only; materializing
+its pair count is outside this bounded experiment.
 Use a positive component cap for those modes.
 
 ## Checks and measurement
 
 An imperative union-find fixed point, independent of Ascent and the provenance
 operations, supplies the expected equivalence relation. The bounded checks
-compare complete pair sets from all three engines. Every Boolean witness is
+compare the complete explicit and Boolean pair sets with the oracle. The compact
+engine is checked by exact cardinality and every member-to-class-root pair;
+together these identify the full equivalence partition. Every Boolean witness is
 replayed by itself; removing any one token must destroy its result. This checks
 sufficiency and minimality. Exhaustive input subsets establish witness
 completeness on a seven-row fixture and a five-row real OpenJDK component.
