@@ -1,0 +1,4 @@
+mode,cap,facts,alloc,assign,load,store,pairs,witnesses,max_witnesses,field_pairs
+eqrel,128,15760,1023,12968,1754,15,82324,0,0,102
+explicit,128,15760,1023,12968,1754,15,82324,0,0,102
+eqrel,0,47069,4261,39607,2692,509,541214413,0,0,100775707

@@ -1,0 +1,45 @@
+[
+  {
+    "cap": 128,
+    "mode": "eqrel",
+    "stage": "check",
+    "status": "passed"
+  },
+  {
+    "cap": 128,
+    "mode": "explicit",
+    "stage": "check",
+    "status": "passed"
+  },
+  {
+    "cap": 128,
+    "mode": "boolean",
+    "stage": "check",
+    "status": "timeout",
+    "timeout_seconds": 180
+  },
+  {
+    "cap": 0,
+    "mode": "eqrel",
+    "stage": "check",
+    "status": "passed"
+  },
+  {
+    "cap": 128,
+    "mode": "eqrel",
+    "stage": "bench",
+    "status": "passed"
+  },
+  {
+    "cap": 128,
+    "mode": "explicit",
+    "stage": "bench",
+    "status": "passed"
+  },
+  {
+    "cap": 0,
+    "mode": "eqrel",
+    "stage": "bench",
+    "status": "passed"
+  }
+]

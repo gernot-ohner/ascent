@@ -1,0 +1,43 @@
+{
+  "date_utc": "2026-09-27T15:07:25.420031+00:00",
+  "commit": "85fc164565233480fe85b7995860f2943866d720",
+  "dirty": false,
+  "cargo_lock_sha256": "846b2307a71bfcaa93d7882adf57fb6cb2e02b09d809bc3e8fafa0bdfb4131dd",
+  "source_sha256": {
+    "ascent-provenance/examples/openjdk.rs": "4704b0bb1e18d718770a2740c99d35d7540891f81c819552d578d364dc8aca5f",
+    "ascent-provenance/examples/openjdk/analysis.rs": "bc8bbe807dea8e1d996daea8d73e22ce3c8319de35f417f0b49a248a10481586",
+    "ascent-provenance/examples/openjdk/facts.rs": "420fb8acd2ee9c184c2e9ac14c7917b4f2f5f2c9b52376c090f4607fbc2f3c9d",
+    "benchmarks/openjdk.py": "034ab134e15839000cde03e6f68cc8ec5048b768c442232aec1217b5712ea180"
+  },
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "machine": "arm64",
+  "cpus": 8,
+  "compiler": "rustc 1.85.0 (4d91de4e4 2025-02-17)\nbinary: rustc\ncommit-hash: 4d91de4e48198da2e33413efdcd9cd2cc0c46688\ncommit-date: 2025-02-17\nhost: aarch64-apple-darwin\nrelease: 1.85.0\nLLVM version: 19.1.7",
+  "samples": 5,
+  "warmups": 1,
+  "caps": [
+    128
+  ],
+  "timeout_seconds": 180,
+  "dataset": {
+    "alloc": {
+      "sha256": "c84a99a1e7be0794831e6f870337b6cea9c7585e84eb1382d49b4abecfd03788",
+      "rows": 4261
+    },
+    "assign": {
+      "sha256": "b4accb36a1b85d425b79ad3b9bd4bfb1ff1095f17c155a237296a7e051e412f0",
+      "rows": 39607
+    },
+    "load": {
+      "sha256": "11f3904331441183437d93d45cd76bc8abcbe61f41b6a1d206bec7707c112b4a",
+      "rows": 2692
+    },
+    "store": {
+      "sha256": "bcc6f3c1d8c31b5e4229b3a78912aafdf778fb747d8c1fb4c210ea43493ad68c",
+      "rows": 509
+    }
+  },
+  "rss": "macOS process peak bytes, including loading, warmup and all samples",
+  "cpu": "Apple M1 Pro",
+  "memory_bytes": 34359738368
+}

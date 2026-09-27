@@ -4,7 +4,8 @@ This example runs the repository's OpenJDK `java.lang` Steensgaard facts through
 three implementations: stock Ascent with compact `eqrel` storage, stock Ascent
 with explicit equivalence rules, and those explicit rules with Boolean
 provenance. All three use registry Ascent 0.8.1 and the same interned inputs.
-The provenance library and macros are unchanged.
+The provenance library and macros are unchanged. The [performance report](OPENJDK_RESULTS.md)
+contains the measured times, memory, output counts and the cap-128 timeout.
 
 From `extensions/ascent-provenance/`:
 
@@ -18,8 +19,8 @@ python3 benchmarks/openjdk.py --caps 128 --output /tmp/openjdk-stress
 ```
 
 The runner requires Python 3 and a POSIX system. It builds the release example,
-checks each input, then measures cases serially. Each engine is checked separately, so a timeout
-in one cannot hide the other baselines. The output directory must be
+checks each input, then measures cases serially. Each engine is checked
+separately, so a timeout in one cannot hide the other baselines. The output directory must be
 new. It contains per-sample CSV, check results, source and data hashes, machine
 and compiler details, and process logs. Nonzero exits and timeouts are recorded
 as failures; they are never reported as zero time. Each process has a 180-second
@@ -54,8 +55,8 @@ outside facts cannot add pairs or witnesses inside it. Caps 8, 32 and 64
 retain successively larger components; they are not row-prefix samples.
 
 Full-data here means all 47,069 packaged `java.lang` facts, not the whole JDK.
-Full-data `eqrel` runs separately. The runner schedules the full-data case for `eqrel` only; materializing
-its pair count is outside this bounded experiment.
+Full-data `eqrel` runs separately. The runner schedules the full-data case for
+`eqrel` only; materializing its pair count is outside this bounded experiment.
 Use a positive component cap for those modes.
 
 ## Checks and measurement

@@ -37,7 +37,7 @@ fn exhaustive(facts: &Facts) {
 fn field_sensitive_witnesses_match_every_input_world() {
    exhaustive(&fixture(vec![
       Row::Alloc(0, 1),
-      Row::Assign(0, 1), // Duplicate logical premise, distinct tokens.
+      Row::Alloc(0, 1), // Duplicate source fact, distinct tokens.
       Row::Store(0, 7, 2),
       Row::Load(3, 7, 1),
       Row::Load(4, 8, 1), // Different field must not join.

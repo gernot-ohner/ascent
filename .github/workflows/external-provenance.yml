@@ -5,10 +5,12 @@ on:
     branches: [master, 'codex/provenance-values', 'codex/provenance-macros', 'codex/provenance-validation']
     paths:
       - 'extensions/ascent-provenance/**'
+      - 'byods/ascent-byods-rels/examples/steensgaard/openjdk_javalang_steensgaard/**'
       - '.github/workflows/external-provenance.yml'
   push:
     paths:
       - 'extensions/ascent-provenance/**'
+      - 'byods/ascent-byods-rels/examples/steensgaard/openjdk_javalang_steensgaard/**'
       - '.github/workflows/external-provenance.yml'
 
 permissions:

@@ -1,15 +1,17 @@
 # External provenance: review the stack
 
 This stack splits [PR #4](https://github.com/gernot-ohner/ascent/pull/4) into
-three buildable layers. PR #4 remains open and unchanged. The top of this stack
-contains the same runtime, macros, tests, examples and recorded benchmark data.
-The split changes documentation, commit boundaries and CI branch filters.
+three buildable layers. PR #4 remains open and unchanged. Layer 3 contains the
+same runtime, macros, tests, examples and recorded benchmark data. The split
+changes documentation, commit boundaries and CI branch filters. A fourth layer
+adds the OpenJDK example and performance measurements.
 
 | Order | PR | Base | Review guide |
 | --- | --- | --- | --- |
 | 1 | [Provenance values](https://github.com/gernot-ohner/ascent/pull/5) | `master` | [Values](reviews/01-values.md) |
 | 2 | [External macros](https://github.com/gernot-ohner/ascent/pull/6) | `codex/provenance-values` | [Macros](reviews/02-macros.md) |
 | 3 | [Validation and benchmarks](https://github.com/gernot-ohner/ascent/pull/7) | `codex/provenance-macros` | [Validation](reviews/03-validation.md) |
+| 4 | OpenJDK test and performance | `codex/provenance-validation` | [OpenJDK](reviews/04-openjdk.md) |
 
 Review each PR against its listed base. The second diff contains only what it
 adds to the first; the third contains only what it adds to the second. Each tip
@@ -24,7 +26,7 @@ separate representation and capture backend; the frontend may be reusable.
 
 ## Read 499 lines
 
-The per-PR guides divide this same reading list. You do not need to read another
+The first three per-PR guides divide this same reading list. You do not need to read another
 500 lines for each PR. Counts include comments and blank lines; the source
 links point to each layer's branch.
 
@@ -72,3 +74,8 @@ not evidence of large-application scalability.
 The main review questions are whether annotation propagation has a
 counterexample, whether the external frontend is worth maintaining, and
 whether any of its choices would obstruct a later expression backend.
+
+The [OpenJDK follow-up](reviews/04-openjdk.md) has its own 437-line reading path
+and [performance report](benchmarks/OPENJDK_RESULTS.md). It compares compact
+`eqrel`, explicit pairs and Boolean provenance on closed real-data subsets.
+All completed cases pass independent checks; the next Boolean subset times out.

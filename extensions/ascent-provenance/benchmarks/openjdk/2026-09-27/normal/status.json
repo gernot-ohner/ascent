@@ -1,0 +1,122 @@
+[
+  {
+    "cap": 8,
+    "mode": "eqrel",
+    "stage": "check",
+    "status": "passed"
+  },
+  {
+    "cap": 8,
+    "mode": "explicit",
+    "stage": "check",
+    "status": "passed"
+  },
+  {
+    "cap": 8,
+    "mode": "boolean",
+    "stage": "check",
+    "status": "passed"
+  },
+  {
+    "cap": 32,
+    "mode": "eqrel",
+    "stage": "check",
+    "status": "passed"
+  },
+  {
+    "cap": 32,
+    "mode": "explicit",
+    "stage": "check",
+    "status": "passed"
+  },
+  {
+    "cap": 32,
+    "mode": "boolean",
+    "stage": "check",
+    "status": "passed"
+  },
+  {
+    "cap": 64,
+    "mode": "eqrel",
+    "stage": "check",
+    "status": "passed"
+  },
+  {
+    "cap": 64,
+    "mode": "explicit",
+    "stage": "check",
+    "status": "passed"
+  },
+  {
+    "cap": 64,
+    "mode": "boolean",
+    "stage": "check",
+    "status": "passed"
+  },
+  {
+    "cap": 0,
+    "mode": "eqrel",
+    "stage": "check",
+    "status": "passed"
+  },
+  {
+    "cap": 8,
+    "mode": "eqrel",
+    "stage": "bench",
+    "status": "passed"
+  },
+  {
+    "cap": 8,
+    "mode": "explicit",
+    "stage": "bench",
+    "status": "passed"
+  },
+  {
+    "cap": 8,
+    "mode": "boolean",
+    "stage": "bench",
+    "status": "passed"
+  },
+  {
+    "cap": 32,
+    "mode": "eqrel",
+    "stage": "bench",
+    "status": "passed"
+  },
+  {
+    "cap": 32,
+    "mode": "explicit",
+    "stage": "bench",
+    "status": "passed"
+  },
+  {
+    "cap": 32,
+    "mode": "boolean",
+    "stage": "bench",
+    "status": "passed"
+  },
+  {
+    "cap": 64,
+    "mode": "eqrel",
+    "stage": "bench",
+    "status": "passed"
+  },
+  {
+    "cap": 64,
+    "mode": "explicit",
+    "stage": "bench",
+    "status": "passed"
+  },
+  {
+    "cap": 64,
+    "mode": "boolean",
+    "stage": "bench",
+    "status": "passed"
+  },
+  {
+    "cap": 0,
+    "mode": "eqrel",
+    "stage": "bench",
+    "status": "passed"
+  }
+]
