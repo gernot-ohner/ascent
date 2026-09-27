@@ -1,0 +1,14 @@
+{
+  "base_commit": "31d7710823556d67a271af5815544be61b2849d2",
+  "cpu": "Apple M1 Pro",
+  "memory_gib": 32,
+  "compiler": "rustc 1.85.0",
+  "profile": "release",
+  "warmups": 1,
+  "samples": "5 except larger cap512 cases: 3",
+  "timing": "run() only, outside parsing/tagging/checking/result inspection/destruction",
+  "source_sha256": {
+    "ascent-provenance/examples/openjdk/analysis.rs": "d9d5a0ae2b884b5c8644efb002118c75c57e87cfd2a21d43962fc47e2b59d867",
+    "ascent-provenance/src/why_provenance.rs": "22faa62ad7d3b682cbebe83c4bc4097ed4ba25ab2830497d0653d1ce24f25c0a"
+  }
+}

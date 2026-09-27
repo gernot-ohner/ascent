@@ -1,0 +1,2 @@
+running boolean: 15760 facts, 82324 expected pairs
+boolean evaluation finished: 408.024208ms; checking pairs and replaying witnesses

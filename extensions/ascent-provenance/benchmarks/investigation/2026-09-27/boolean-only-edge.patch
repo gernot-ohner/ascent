@@ -1,0 +1,16 @@
+--- a/extensions/ascent-provenance/ascent-provenance/examples/openjdk/analysis.rs
++++ b/extensions/ascent-provenance/ascent-provenance/examples/openjdk/analysis.rs
+@@ -41,0 +42 @@
++   #[provenance(usize)] relation edge(Id,Id);
+@@ -43,5 +44,6 @@
+-   vpt(x,y) <-- alloc(x,y);
+-   vpt(x,y) <-- assign(x,y);
+-   vpt(y,p) <-- store(x,f,y), load(p,f,q), vpt(x,q);
+-   vpt(y,x), vpt(x,x) <-- vpt(x,y);
+-   vpt(x,z) <-- vpt(x,y), vpt(y,z);
++   edge(x,y) <-- alloc(x,y);
++   edge(x,y) <-- assign(x,y);
++   edge(y,p) <-- store(x,f,y), load(p,f,q), vpt(x,q);
++   edge(y,x) <-- edge(x,y);
++   vpt(x,y), vpt(x,x) <-- edge(x,y);
++   vpt(x,z) <-- vpt(x,y), edge(y,z);

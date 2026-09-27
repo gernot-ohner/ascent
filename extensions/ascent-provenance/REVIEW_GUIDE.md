@@ -4,7 +4,8 @@ This stack splits [PR #4](https://github.com/gernot-ohner/ascent/pull/4) into
 three buildable layers. PR #4 remains open and unchanged. Layer 3 contains the
 same runtime, macros, tests, examples and recorded benchmark data. The split
 changes documentation, commit boundaries and CI branch filters. A fourth layer
-adds the OpenJDK example and performance measurements.
+adds the OpenJDK example and performance measurements; the fifth improves its
+rules and Boolean product normalization.
 
 | Order | PR | Base | Review guide |
 | --- | --- | --- | --- |
@@ -12,6 +13,7 @@ adds the OpenJDK example and performance measurements.
 | 2 | [External macros](https://github.com/gernot-ohner/ascent/pull/6) | `codex/provenance-values` | [Macros](reviews/02-macros.md) |
 | 3 | [Validation and benchmarks](https://github.com/gernot-ohner/ascent/pull/7) | `codex/provenance-macros` | [Validation](reviews/03-validation.md) |
 | 4 | [OpenJDK test and performance](https://github.com/gernot-ohner/ascent/pull/9) | `codex/provenance-validation` | [OpenJDK](reviews/04-openjdk.md) |
+| 5 | Performance improvements | `codex/provenance-openjdk` | [Performance](reviews/05-performance.md) |
 
 Review each PR against its listed base. The second diff contains only what it
 adds to the first; the third contains only what it adds to the second. Each tip
@@ -70,6 +72,10 @@ indexing of 32,000 inputs from 173.816 ms to 7.503 ms. But 4,096 minimal witness
 took 2.131 ms in why mode and 417.753 ms in Boolean mode. Explicit output can
 grow exponentially; subset checks add cost. These are synthetic measurements,
 not evidence of large-application scalability.
+
+The [fifth-layer guide](reviews/05-performance.md) covers the two optimizations
+and their new tests. Its [report](benchmarks/OPENJDK_INVESTIGATION.md) keeps the
+original measurements and distinguishes completed runs from timeouts.
 
 The main review questions are whether annotation propagation has a
 counterexample, whether the external frontend is worth maintaining, and

@@ -1,5 +1,30 @@
 # Verification: external provenance readiness
 
+## Performance layer: September 27, 2026
+
+Two separate implementation commits above PR #9 change the OpenJDK rule shape
+and Boolean product candidate order. Each passed all 69 workspace tests before
+commit. New tests exhaust all worlds of a chained-field fixture and 100 generated
+seven-row inputs; the existing Boolean algebra test checks all three-token
+positive Boolean functions.
+
+Fresh checks also passed: nightly formatting; caller-local captures; seven
+expected diagnostics; the two benchmark-runner tests; the independent consumer
+with stock parallel coexistence; the relocated consumer; and documentation.
+All 16 synthetic benchmark smoke cases retained their expected tuple and witness
+counts. Independent review found no implementation issue; its report wording
+clarifications were applied.
+The final release benchmark passed ten engine checks and 30 samples across
+caps 64, 128, 512 and full compact input. Every returned Boolean witness was
+replayed and checked by single-token deletion before timing. See the
+[report](benchmarks/OPENJDK_INVESTIGATION.md) for medians, memory and raw records.
+
+The 17,598-fact timeout is an earlier probe of the same example and product code
+apart from comments. It remains a limit, not a completed timing sample. The
+pinned ProvSQL comparison was not rerun for this layer because its Docker image
+was unavailable locally; its prior results below remain historical evidence.
+
+
 ## Separate review stack: September 27, 2026
 
 The three review branches start at fork master `e52c84b` and reproduce PR #4

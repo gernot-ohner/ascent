@@ -1,0 +1,29 @@
+[
+  {
+    "mode": "eqrel",
+    "status": "passed",
+    "exit_code": 0,
+    "wall_seconds": 0.255859375,
+    "sampled_peak_rss_kib": 1536,
+    "timeout_seconds": 60,
+    "rss_limit_kib": 4194304
+  },
+  {
+    "mode": "explicit",
+    "status": "passed",
+    "exit_code": 0,
+    "wall_seconds": 0.2610457499977201,
+    "sampled_peak_rss_kib": 8032,
+    "timeout_seconds": 60,
+    "rss_limit_kib": 4194304
+  },
+  {
+    "mode": "boolean",
+    "status": "timeout",
+    "exit_code": -9,
+    "wall_seconds": 60.2434516249923,
+    "sampled_peak_rss_kib": 3272048,
+    "timeout_seconds": 60,
+    "rss_limit_kib": 4194304
+  }
+]

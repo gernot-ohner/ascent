@@ -1,0 +1,26 @@
+[
+  {
+    "case": "edge512",
+    "samples": 3,
+    "median_ms": 12576.276417,
+    "min_ms": 12406.579958,
+    "max_ms": 12736.631209,
+    "witnesses": 1944910
+  },
+  {
+    "case": "combined128",
+    "samples": 5,
+    "median_ms": 407.393917,
+    "min_ms": 394.063791,
+    "max_ms": 418.909417,
+    "witnesses": 216624
+  },
+  {
+    "case": "combined512",
+    "samples": 3,
+    "median_ms": 9018.22975,
+    "min_ms": 8926.685334,
+    "max_ms": 9182.708333,
+    "witnesses": 1944910
+  }
+]

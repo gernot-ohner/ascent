@@ -1,0 +1,16 @@
+diff --git a/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs b/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs
+index 319fa9c..346969c 100644
+--- a/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs
++++ b/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs
+@@ -90 +90,3 @@ impl<T: Clone + Ord + Hash> BooleanProvenance<T> {
+-      // Normalize candidates too: first insertion of a tuple can bypass join.
++      // Probe: shortest witnesses first, so later candidates cannot absorb survivors.
++      let mut candidates: Vec<_> = self.0.__product(&other.0).witnesses.0.into_iter().collect();
++      candidates.sort_unstable_by_key(BTreeSet::len);
+@@ -92,2 +94,4 @@ impl<T: Clone + Ord + Hash> BooleanProvenance<T> {
+-      for witness in self.0.__product(&other.0).witnesses.0 {
+-         result.insert(witness);
++      for witness in candidates {
++         if !result.witnesses().iter().any(|old| old.is_subset(&witness)) {
++            result.0.witnesses.0.insert(witness);
++         }

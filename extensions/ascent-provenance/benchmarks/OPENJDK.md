@@ -4,8 +4,11 @@ This example runs the repository's OpenJDK `java.lang` Steensgaard facts through
 three implementations: stock Ascent with compact `eqrel` storage, stock Ascent
 with explicit equivalence rules, and those explicit rules with Boolean
 provenance. All three use registry Ascent 0.8.1 and the same interned inputs.
-The provenance library and macros are unchanged. The [performance report](OPENJDK_RESULTS.md)
-contains the measured times, memory, output counts and the cap-128 timeout.
+The explicit and Boolean programs extend paths through a separate direct-edge
+relation. Boolean products process smaller witnesses first. The
+[original report](OPENJDK_RESULTS.md) preserves PR #9 measurements; the
+[optimization report](OPENJDK_INVESTIGATION.md) compares the changes and records
+the remaining limit.
 
 From `extensions/ascent-provenance/`:
 
@@ -14,8 +17,10 @@ cargo +1.85.0 run -p ascent-provenance --release --locked --example openjdk -- e
 cargo +1.85.0 test -p ascent-provenance --test openjdk --locked
 python3 tests/openjdk_runner.py
 python3 benchmarks/openjdk.py --output /tmp/openjdk-measurements
-# Optional stress case; a failed check returns nonzero and is recorded.
-python3 benchmarks/openjdk.py --caps 128 --output /tmp/openjdk-stress
+# Larger completed cases; checks replay every witness before timing.
+python3 benchmarks/openjdk.py --caps 64 128 512 --samples 3 --output /tmp/openjdk-larger
+# Optional stress case: Boolean evaluation has a recorded timeout here.
+python3 benchmarks/openjdk.py --caps 1200 --timeout 60 --output /tmp/openjdk-stress
 ```
 
 The runner requires Python 3 and a POSIX system. It builds the release example,
@@ -68,7 +73,8 @@ engine is checked by exact cardinality and every member-to-class-root pair;
 together these identify the full equivalence partition. Every Boolean witness is
 replayed by itself; removing any one token must destroy its result. This checks
 sufficiency and minimality. Exhaustive input subsets establish witness
-completeness on a seven-row fixture and a five-row real OpenJDK component.
+completeness on small fixtures, 100 generated seven-row inputs and a five-row
+real OpenJDK component.
 They do not establish completeness by enumeration on the large subsets.
 
 The full-data check compares compact counts and every member-to-class-root
