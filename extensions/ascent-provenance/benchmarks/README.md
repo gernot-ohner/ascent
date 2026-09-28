@@ -26,7 +26,7 @@ Use `--no-rss` when macOS sandbox permissions block `/usr/bin/time -l`.
 
 The recorded pre-optimization baseline is published at immutable commit
 [`bd8ec0498272d2d7383b55646fc08ba5a255b004`](https://github.com/gernot-ohner/ascent/tree/bd8ec0498272d2d7383b55646fc08ba5a255b004)
-on the fork's `codex/external-provenance-benchmark-baseline` reference branch.
+on the fork's `perf/external-provenance-benchmark-baseline` reference branch.
 It is a standalone workspace at the archive root. From this extension workspace,
 retrieve that exact source and use the same harness for both versions:
 

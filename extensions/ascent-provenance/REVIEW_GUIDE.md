@@ -1,6 +1,6 @@
 # External provenance: notes for review
 
-[PR #4](https://github.com/gernot-ohner/ascent/pull/4) adds why and Boolean
+[PR #11](https://github.com/gernot-ohner/ascent/pull/11) adds why and Boolean
 provenance through two crates on top of Ascent 0.8.1. The macros add an annotation
 column to each tracked relation and translate its rules into ordinary lattice
 rules. Stock Ascent handles the joins, indexes and execution. Ascent itself does

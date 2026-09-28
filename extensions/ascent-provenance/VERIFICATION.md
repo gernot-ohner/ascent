@@ -2,14 +2,14 @@
 
 Verified September 26, 2026 in the standalone package at `bda3860`, based on
 `bd8ec04`. That package is imported under `extensions/ascent-provenance/` on
-`codex/external-provenance-readiness`, based on fork master `e52c84b`, for review
+`feature/external-provenance-readiness`, based on fork master `e52c84b`, for review
 within `gernot-ohner/ascent`. The former inline-capture acceptance gate is
 resolved. Ascent source and its parent workspace remain unmodified; the external
 workspace has its own CI workflow. No crate publication is part of this change.
 
 The initial readiness hash `bda3860` identifies the standalone source history.
 The pre-optimization baseline `bd8ec04` is now published on the fork's separate
-`codex/external-provenance-benchmark-baseline` branch; it is not an ancestor of
+`perf/external-provenance-benchmark-baseline` branch; it is not an ancestor of
 this PR. See benchmarks/README.md for immutable source retrieval and replay.
 Source attribution and measurement provenance remain in THIRD_PARTY_NOTICES.md
 and benchmarks/RESULTS.md.
