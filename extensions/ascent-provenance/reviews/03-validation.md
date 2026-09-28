@@ -4,7 +4,7 @@ This PR adds the shortest-path example and its four tests, the ProvSQL
 comparison, the scaling harness and recorded results. The runtime and macro
 code are unchanged from the second PR. Their regression tests stay there.
 
-Read [compare.py:206-251](https://github.com/gernot-ohner/ascent/blob/codex/provenance-validation/extensions/ascent-provenance/ascent-provenance/examples/provsql/compare.py#L206-L251):
+Read [compare.py:206-251](https://github.com/gernot-ohner/ascent/blob/feature/provenance-validation/extensions/ascent-provenance/ascent-provenance/examples/provsql/compare.py#L206-L251):
 **46 lines**, completing the overall 499-line reading list. For each saved
 ProvSQL result, this code evaluates every assignment of input labels and keeps
 the minimal true sets. Why mode instead calls `sr_why`.
@@ -42,4 +42,4 @@ checks that the benchmark still works; use the [benchmark instructions](../bench
 for timing comparisons. CI runs the Rust tests and consumer checks. Docker
 comparisons and timing measurements remain manual.
 
-[Overall stack guide](../REVIEW_GUIDE.md)
+[Overall stack guide](https://github.com/gernot-ohner/ascent/blob/perf/provenance-performance/extensions/ascent-provenance/REVIEW_GUIDE.md)

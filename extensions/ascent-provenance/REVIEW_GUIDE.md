@@ -32,21 +32,21 @@ information they discard.
 
 | Order | PR | Base | Review guide |
 | --- | --- | --- | --- |
-| 1 | [#5: Provenance values](https://github.com/gernot-ohner/ascent/pull/5) | `master` | [Values](reviews/01-values.md) |
-| 2 | [#6: External macros](https://github.com/gernot-ohner/ascent/pull/6) | `codex/provenance-values` | [Macros](reviews/02-macros.md) |
-| 3 | [#7: Validation and benchmarks](https://github.com/gernot-ohner/ascent/pull/7) | `codex/provenance-macros` | [Validation](reviews/03-validation.md) |
-| 4 | [#9: OpenJDK test and performance](https://github.com/gernot-ohner/ascent/pull/9) | `codex/provenance-validation` | [OpenJDK](reviews/04-openjdk.md) |
-| 5 | [#10: Performance improvements](https://github.com/gernot-ohner/ascent/pull/10) | `codex/provenance-openjdk` | [Performance](reviews/05-performance.md) |
+| 1 | [#12: Provenance values](https://github.com/gernot-ohner/ascent/pull/12) | `master` | [Values](reviews/01-values.md) |
+| 2 | [#13: External macros](https://github.com/gernot-ohner/ascent/pull/13) | `feature/provenance-values` | [Macros](reviews/02-macros.md) |
+| 3 | [#14: Validation and benchmarks](https://github.com/gernot-ohner/ascent/pull/14) | `feature/provenance-macros` | [Validation](reviews/03-validation.md) |
+| 4 | [#15: OpenJDK test and performance](https://github.com/gernot-ohner/ascent/pull/15) | `feature/provenance-validation` | [OpenJDK](reviews/04-openjdk.md) |
+| 5 | [#16: Performance improvements](https://github.com/gernot-ohner/ascent/pull/16) | `feature/provenance-openjdk` | [Performance](reviews/05-performance.md) |
 
 Each PR builds on the previous one. Review it against the listed base.
-The first three split [PR #4](https://github.com/gernot-ohner/ascent/pull/4)
-without changing its runtime, macros or tests. PR #4 remains open and unchanged;
+The first three split [PR #11](https://github.com/gernot-ohner/ascent/pull/11)
+without changing its runtime, macros or tests. PR #11 remains open and unchanged;
 it does not include the OpenJDK example or the later optimizations. It overlaps
 the first three PRs, so do not merge both routes.
 
 ## Read 499 lines for the core
 
-This is the combined reading list for PRs #5, #6 and #7. Counts include comments
+This is the combined reading list for PRs #12, #13 and #14. Counts include comments
 and blank lines. Links point to the branch where each section enters the stack.
 The later guides add [437 lines for OpenJDK](reviews/04-openjdk.md) and
 [128 lines for the optimizations](reviews/05-performance.md), including the
@@ -54,12 +54,12 @@ revised Boolean product.
 
 | Layer | Code | Lines | Look for |
 | --- | --- | ---: | --- |
-| Values | [why_provenance.rs:1-127](https://github.com/gernot-ohner/ascent/blob/codex/provenance-values/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs#L1-L127) | 127 | Combine alternatives, multiply witnesses and remove supersets. |
-| Values | [why_provenance_absorption.rs:1-65](https://github.com/gernot-ohner/ascent/blob/codex/provenance-values/extensions/ascent-provenance/ascent-provenance/tests/why_provenance_absorption.rs#L1-L65) | 65 | Compare with independent Boolean truth tables. |
-| Macros | [lower.rs:13-155](https://github.com/gernot-ohner/ascent/blob/codex/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L13-L155) and [173-184](https://github.com/gernot-ohner/ascent/blob/codex/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L173-L184) | 155 | Multiply premise annotations to form head annotations. |
-| Macros | [normalize.rs:5-32](https://github.com/gernot-ohner/ascent/blob/codex/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/normalize.rs#L5-L32) | 28 | Merge duplicate keys and remove zero rows before indexing. |
-| Macros | [wrapper.rs:103-180](https://github.com/gernot-ohner/ascent/blob/codex/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/wrapper.rs#L103-L180) | 78 | Run stock Ascent; expose named reruns and one-shot inline results. |
-| Validation | [compare.py:206-251](https://github.com/gernot-ohner/ascent/blob/codex/provenance-validation/extensions/ascent-provenance/ascent-provenance/examples/provsql/compare.py#L206-L251) | 46 | Evaluate ProvSQL results and extract minimal true sets. |
+| Values | [why_provenance.rs:1-127](https://github.com/gernot-ohner/ascent/blob/feature/provenance-values/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs#L1-L127) | 127 | Combine alternatives, multiply witnesses and remove supersets. |
+| Values | [why_provenance_absorption.rs:1-65](https://github.com/gernot-ohner/ascent/blob/feature/provenance-values/extensions/ascent-provenance/ascent-provenance/tests/why_provenance_absorption.rs#L1-L65) | 65 | Compare with independent Boolean truth tables. |
+| Macros | [lower.rs:13-155](https://github.com/gernot-ohner/ascent/blob/feature/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L13-L155) and [173-184](https://github.com/gernot-ohner/ascent/blob/feature/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L173-L184) | 155 | Multiply premise annotations to form head annotations. |
+| Macros | [normalize.rs:5-32](https://github.com/gernot-ohner/ascent/blob/feature/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/normalize.rs#L5-L32) | 28 | Merge duplicate keys and remove zero rows before indexing. |
+| Macros | [wrapper.rs:103-180](https://github.com/gernot-ohner/ascent/blob/feature/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/wrapper.rs#L103-L180) | 78 | Run stock Ascent; expose named reruns and one-shot inline results. |
+| Validation | [compare.py:206-251](https://github.com/gernot-ohner/ascent/blob/feature/provenance-validation/extensions/ascent-provenance/ascent-provenance/examples/provsql/compare.py#L206-L251) | 46 | Evaluate ProvSQL results and extract minimal true sets. |
 | | **Total** | **499** | |
 
 Three details to check while reading:
@@ -75,13 +75,13 @@ Three details to check while reading:
 
 ## What the tests establish
 
-- All 69 workspace tests passed for PR #10's implementation. They include exhaustive
+- All 69 workspace tests passed for PR #16's implementation. They include exhaustive
   small-input tests and Boolean truth-table checks. Consumer and diagnostic checks
   cover the external macro's compatibility with stock Ascent.
-- PR #7's pinned ProvSQL run passed 264 complete graph-relation comparisons,
+- PR #14's pinned ProvSQL run passed 264 complete graph-relation comparisons,
   shortest-path fixtures and negative controls. These checks test agreement on
   the fixtures; they do not prove general equivalence. ProvSQL was not rerun for
-  PR #10 because the pinned Docker image was unavailable locally.
+  PR #16 because the pinned Docker image was unavailable locally.
 - The OpenJDK tests compare result pairs with an independent union-find oracle.
   Every returned Boolean witness in the completed benchmark checks was replayed
   and checked for minimality. Exhaustive small fixtures also check completeness;
@@ -94,7 +94,7 @@ Three details to check while reading:
 The example adapts Ascent's existing Steensgaard analysis and uses its checked-in
 OpenJDK `java.lang` facts. Subsets contain whole constraint components.
 The benchmark compares compact `eqrel`, explicit pairs and Boolean provenance.
-PR #9 adds the example; PR #10 changes path extension and Boolean product
+PR #15 adds the example; PR #16 changes path extension and Boolean product
 normalization. The [current report](benchmarks/OPENJDK_INVESTIGATION.md) includes
 the original measurements, optimizations and remaining timeout.
 

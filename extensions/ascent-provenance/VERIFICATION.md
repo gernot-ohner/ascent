@@ -34,9 +34,9 @@ Documentation and CI branch filters differ to support the split.
 
 | Layer | Fresh checks |
 | --- | --- |
-| Values (`codex/provenance-values`) | 5 Rust tests, docs and nightly formatting passed. |
-| Macros (`codex/provenance-macros`) | 58 Rust tests; caller-local capture checks; seven expected diagnostics; independent consumer with stock parallel coexistence; relocated consumer; docs and formatting passed. |
-| Validation (`codex/provenance-validation`) | 62 Rust tests; docs and formatting; pinned ProvSQL comparison; all 16 release benchmark smoke cases passed. |
+| Values (`feature/provenance-values`) | 5 Rust tests, docs and nightly formatting passed. |
+| Macros (`feature/provenance-macros`) | 58 Rust tests; caller-local capture checks; seven expected diagnostics; independent consumer with stock parallel coexistence; relocated consumer; docs and formatting passed. |
+| Validation (`feature/provenance-validation`) | 62 Rust tests; docs and formatting; pinned ProvSQL comparison; all 16 release benchmark smoke cases passed. |
 
 The fresh oracle run passed 264 complete graph-relation comparisons, four
 shortest-path fixtures, the additional acyclic tight-edge why comparison and
@@ -54,14 +54,14 @@ See the [overall guide](REVIEW_GUIDE.md) for review order.
 
 Verified September 26, 2026 in the standalone package at `bda3860`, based on
 `bd8ec04`. That package is imported under `extensions/ascent-provenance/` on
-`codex/external-provenance-readiness`, based on fork master `e52c84b`, for review
+`feature/external-provenance-readiness`, based on fork master `e52c84b`, for review
 within `gernot-ohner/ascent`. The former inline-capture acceptance gate is
 resolved. Ascent source and its parent workspace remain unmodified; the external
 workspace has its own CI workflow. No crate publication is part of this change.
 
 The initial readiness hash `bda3860` identifies the standalone source history.
 The pre-optimization baseline `bd8ec04` is now published on the fork's separate
-`codex/external-provenance-benchmark-baseline` branch; it is not an ancestor of
+`perf/external-provenance-benchmark-baseline` branch; it is not an ancestor of
 this PR. See benchmarks/README.md for immutable source retrieval and replay.
 Source attribution and measurement provenance remain in THIRD_PARTY_NOTICES.md
 and benchmarks/RESULTS.md.

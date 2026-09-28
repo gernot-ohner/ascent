@@ -1,6 +1,6 @@
 # 5. OpenJDK and Boolean product performance
 
-[PR #10](https://github.com/gernot-ohner/ascent/pull/10) sits above [PR #9](https://github.com/gernot-ohner/ascent/pull/9).
+[PR #16](https://github.com/gernot-ohner/ascent/pull/16) sits above [PR #15](https://github.com/gernot-ohner/ascent/pull/15).
 It makes two small changes in separate commits. Ascent, the external macro and
 public APIs are unchanged. The first commit changes the example and adds its
 tests; the second changes Boolean product normalization. Supporting reports
@@ -8,16 +8,16 @@ and CI configuration follow separately.
 
 Read the [optimization report](../benchmarks/OPENJDK_INVESTIGATION.md) for the
 before/after measurements, operation counts and remaining timeout. The older
-[report](../benchmarks/OPENJDK_RESULTS.md) remains as the PR #9 baseline.
+[report](../benchmarks/OPENJDK_RESULTS.md) remains as the PR #15 baseline.
 
 ## Read 128 lines
 
 | Code | Lines | Review question |
 | --- | ---: | --- |
-| [Explicit and Boolean rules](https://github.com/gernot-ohner/ascent/blob/codex/provenance-performance/extensions/ascent-provenance/ascent-provenance/examples/openjdk/analysis.rs#L25-L53) | 29 | Does extending paths through direct constraints preserve the equivalence closure and its Boolean witnesses? |
-| [Boolean product](https://github.com/gernot-ohner/ascent/blob/codex/provenance-performance/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs#L87-L103) | 17 | Can a later candidate absorb an earlier survivor after sorting by size? |
-| [New exhaustive fixtures](https://github.com/gernot-ohner/ascent/blob/codex/provenance-performance/extensions/ascent-provenance/ascent-provenance/tests/openjdk.rs#L113-L147) | 35 | Do chained field constraints and all worlds of the generated inputs agree with the independent oracle? |
-| [Existing Boolean truth-table test](https://github.com/gernot-ohner/ascent/blob/codex/provenance-performance/extensions/ascent-provenance/ascent-provenance/tests/why_provenance_absorption.rs#L19-L65) | 47 | Does the product still represent conjunction and retain exactly the minimal witnesses? |
+| [Explicit and Boolean rules](https://github.com/gernot-ohner/ascent/blob/perf/provenance-performance/extensions/ascent-provenance/ascent-provenance/examples/openjdk/analysis.rs#L25-L53) | 29 | Does extending paths through direct constraints preserve the equivalence closure and its Boolean witnesses? |
+| [Boolean product](https://github.com/gernot-ohner/ascent/blob/perf/provenance-performance/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs#L87-L103) | 17 | Can a later candidate absorb an earlier survivor after sorting by size? |
+| [New exhaustive fixtures](https://github.com/gernot-ohner/ascent/blob/perf/provenance-performance/extensions/ascent-provenance/ascent-provenance/tests/openjdk.rs#L113-L147) | 35 | Do chained field constraints and all worlds of the generated inputs agree with the independent oracle? |
+| [Existing Boolean truth-table test](https://github.com/gernot-ohner/ascent/blob/perf/provenance-performance/extensions/ascent-provenance/ascent-provenance/tests/why_provenance_absorption.rs#L19-L65) | 47 | Does the product still represent conjunction and retain exactly the minimal witnesses? |
 | **Total** | **128** | |
 
 The rule rewrite is specific to Boolean provenance. Allocation, assignment and
@@ -41,4 +41,4 @@ Remaining limits matter: the 16,514-fact case has 1.94 million witnesses, and a
 17,598-fact probe still times out after 60 seconds. These changes do not provide
 a shared expression representation or establish full-input scalability.
 
-[Overall stack guide](../REVIEW_GUIDE.md)
+[Overall stack guide](https://github.com/gernot-ohner/ascent/blob/perf/provenance-performance/extensions/ascent-provenance/REVIEW_GUIDE.md)
