@@ -2,7 +2,7 @@ name: External provenance
 
 on:
   pull_request:
-    branches: [master, 'codex/provenance-values', 'codex/provenance-macros']
+    branches: [master, 'feature/provenance-values', 'feature/provenance-macros']
     paths:
       - 'extensions/ascent-provenance/**'
       - '.github/workflows/external-provenance.yml'

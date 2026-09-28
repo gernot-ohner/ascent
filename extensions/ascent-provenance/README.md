@@ -27,4 +27,4 @@ cargo +1.85.0 doc --workspace --no-deps --locked
 
 The five tests cover the two-token why algebra, three-token Boolean truth
 tables, and use with stock Ascent. See the [values review guide](reviews/01-values.md)
-and the [overall stack guide](https://github.com/gernot-ohner/ascent/blob/codex/provenance-validation/extensions/ascent-provenance/REVIEW_GUIDE.md).
+and the [overall stack guide](https://github.com/gernot-ohner/ascent/blob/feature/provenance-validation/extensions/ascent-provenance/REVIEW_GUIDE.md).
