@@ -9,9 +9,9 @@ list. Links point to this layer's branch.
 
 | Read | Lines | Check |
 | --- | ---: | --- |
-| [lower.rs:13-155](https://github.com/gernot-ohner/ascent/blob/codex/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L13-L155) and [173-184](https://github.com/gernot-ohner/ascent/blob/codex/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L173-L184) | 155 | Tracked premises contribute a product; tracked heads receive it as a new column. |
-| [normalize.rs:5-32](https://github.com/gernot-ohner/ascent/blob/codex/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/normalize.rs#L5-L32) | 28 | Duplicate keys join their witnesses; zero rows disappear before indexing. |
-| [wrapper.rs:103-180](https://github.com/gernot-ohner/ascent/blob/codex/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/wrapper.rs#L103-L180) | 78 | Named programs retain the engine; inline programs execute in the caller's scope. |
+| [lower.rs:13-155](https://github.com/gernot-ohner/ascent/blob/feature/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L13-L155) and [173-184](https://github.com/gernot-ohner/ascent/blob/feature/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L173-L184) | 155 | Tracked premises contribute a product; tracked heads receive it as a new column. |
+| [normalize.rs:5-32](https://github.com/gernot-ohner/ascent/blob/feature/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/normalize.rs#L5-L32) | 28 | Duplicate keys join their witnesses; zero rows disappear before indexing. |
+| [wrapper.rs:103-180](https://github.com/gernot-ohner/ascent/blob/feature/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/wrapper.rs#L103-L180) | 78 | Named programs retain the engine; inline programs execute in the caller's scope. |
 | **Total** | **261** | |
 
 The parser and macro-hygiene code form most of this diff. They stay together:
@@ -44,7 +44,7 @@ python3 tests/relocated_consumer.py
 ```
 
 Expect 58 workspace tests, seven diagnostic checks and passing consumer runs.
-The feature regressions live here, including the `Self` fixes from PR #4.
+The feature regressions live here, including the `Self` fixes from PR #11.
 The final PR adds the independent oracle and performance measurements.
 
-[Overall stack guide](https://github.com/gernot-ohner/ascent/blob/codex/provenance-validation/extensions/ascent-provenance/REVIEW_GUIDE.md)
+[Overall stack guide](https://github.com/gernot-ohner/ascent/blob/perf/provenance-performance/extensions/ascent-provenance/REVIEW_GUIDE.md)

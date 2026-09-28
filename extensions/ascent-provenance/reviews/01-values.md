@@ -9,8 +9,8 @@ layer's branch even when you open this guide from a later PR.
 
 | Read | Lines | Check |
 | --- | ---: | --- |
-| [why_provenance.rs:1-127](https://github.com/gernot-ohner/ascent/blob/codex/provenance-values/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs#L1-L127) | 127 | Join, product, order and Boolean absorption. |
-| [why_provenance_absorption.rs:1-65](https://github.com/gernot-ohner/ascent/blob/codex/provenance-values/extensions/ascent-provenance/ascent-provenance/tests/why_provenance_absorption.rs#L1-L65) | 65 | An independent truth-table model checks all three-token Boolean values. |
+| [why_provenance.rs:1-127](https://github.com/gernot-ohner/ascent/blob/feature/provenance-values/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs#L1-L127) | 127 | Join, product, order and Boolean absorption. |
+| [why_provenance_absorption.rs:1-65](https://github.com/gernot-ohner/ascent/blob/feature/provenance-values/extensions/ascent-provenance/ascent-provenance/tests/why_provenance_absorption.rs#L1-L65) | 65 | An independent truth-table model checks all three-token Boolean values. |
 | **Total** | **192** | |
 
 Why mode keeps all distinct supporting token sets, including supersets.
@@ -36,4 +36,4 @@ Five tests should pass. Explicit sets can be expensive; the third PR contains
 measurements. The question here is whether these values express the intended
 why and positive Boolean semantics.
 
-[Overall stack guide](https://github.com/gernot-ohner/ascent/blob/codex/provenance-validation/extensions/ascent-provenance/REVIEW_GUIDE.md)
+[Overall stack guide](https://github.com/gernot-ohner/ascent/blob/perf/provenance-performance/extensions/ascent-provenance/REVIEW_GUIDE.md)

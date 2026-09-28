@@ -2,7 +2,7 @@ name: External provenance
 
 on:
   pull_request:
-    branches: [master, 'codex/provenance-values', 'codex/provenance-macros', 'codex/provenance-validation']
+    branches: [master, 'feature/provenance-values', 'feature/provenance-macros', 'feature/provenance-validation']
     paths:
       - 'extensions/ascent-provenance/**'
       - 'byods/ascent-byods-rels/examples/steensgaard/openjdk_javalang_steensgaard/**'
