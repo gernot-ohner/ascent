@@ -26,3 +26,9 @@ Transferred from the provenance experiment at commit
   `ascent/examples` at the same commit. Changes concern imports, macro entry
   points, output ownership and the Cargo package argument, not expected results
   or oracle semantics. The historical absorption test filename is retained.
+
+The OpenJDK example adapts the stock Steensgaard example at the stock comparison
+commit above, with explicit mapping of the checked-in load TSV columns. It uses
+the existing repository fact files from the [PACT 2019 artifact](https://zenodo.org/records/3346193),
+whose dataset record specifies the Universal Permissive License 1.0. No copy
+of those fact files is added to the extension.
