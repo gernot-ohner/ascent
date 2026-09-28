@@ -1,0 +1,52 @@
+[
+  {
+    "case": "baseline64",
+    "median_ms": 2308.895416,
+    "min_ms": 2283.471625,
+    "max_ms": 2328.894125,
+    "facts": 15645,
+    "pairs": 72523,
+    "witnesses": 81164,
+    "binary_sha256": "482d9e95b3198234d7618d385b016b5fc336c15ac454f173b134a4a01ab366da"
+  },
+  {
+    "case": "ordered64",
+    "median_ms": 1889.699584,
+    "min_ms": 1853.254167,
+    "max_ms": 2041.332708,
+    "facts": 15645,
+    "pairs": 72523,
+    "witnesses": 81164,
+    "binary_sha256": "8bc73dd9d9c3bb93dcd254cbac3cf75f52d0eb79ab5888854072092722123592"
+  },
+  {
+    "case": "linear64",
+    "median_ms": 145.794084,
+    "min_ms": 134.900875,
+    "max_ms": 151.874083,
+    "facts": 15645,
+    "pairs": 72523,
+    "witnesses": 81164,
+    "binary_sha256": "1ac6d5f507f3ea7f47a8a0a666a36cc1f798d6713a82f1d70d7164f2da5208c5"
+  },
+  {
+    "case": "linear128",
+    "median_ms": 507.536875,
+    "min_ms": 500.144,
+    "max_ms": 537.693917,
+    "facts": 15760,
+    "pairs": 82324,
+    "witnesses": 216624,
+    "binary_sha256": "1ac6d5f507f3ea7f47a8a0a666a36cc1f798d6713a82f1d70d7164f2da5208c5"
+  },
+  {
+    "case": "linear-component",
+    "median_ms": 336.234959,
+    "min_ms": 331.222875,
+    "max_ms": 361.84325,
+    "facts": 115,
+    "pairs": 9801,
+    "witnesses": 135460,
+    "binary_sha256": "1ac6d5f507f3ea7f47a8a0a666a36cc1f798d6713a82f1d70d7164f2da5208c5"
+  }
+]

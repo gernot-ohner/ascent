@@ -109,3 +109,39 @@ fn tsv_load_column_order_and_bad_rows_are_checked() {
       assert!(Facts::parse(["", "", bad, ""]).is_err());
    }
 }
+
+#[test]
+fn chained_field_constraints_match_every_input_world() {
+   exhaustive(&fixture(vec![
+      Row::Alloc(0, 1),
+      Row::Store(0, 7, 2),
+      Row::Load(3, 7, 1),
+      Row::Store(2, 8, 4),
+      Row::Load(5, 8, 3),
+      Row::Assign(2, 3),
+      Row::Assign(4, 5),
+   ]));
+}
+
+#[test]
+fn generated_small_programs_match_every_input_world() {
+   let mut state = 0x12345678_u32;
+   let mut next = || {
+      state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+      state >> 16
+   };
+   for _ in 0..100 {
+      let rows = (0..7)
+         .map(|_| {
+            let (kind, a, b, f) = (next() % 4, next() % 5, next() % 5, next() % 2);
+            match kind {
+               0 => Row::Alloc(a, b),
+               1 => Row::Assign(a, b),
+               2 => Row::Load(a, f, b),
+               _ => Row::Store(a, f, b),
+            }
+         })
+         .collect();
+      exhaustive(&fixture(rows));
+   }
+}

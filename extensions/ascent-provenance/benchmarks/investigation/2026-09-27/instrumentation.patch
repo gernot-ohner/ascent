@@ -1,0 +1,83 @@
+--- a/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs
++++ b/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs
+@@ -60 +60 @@
+-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
++#[derive(Debug, PartialEq, Eq, Hash)]
+@@ -61,0 +62,8 @@
++
++impl<T: Clone + Ord + Hash> Clone for BooleanProvenance<T> {
++ fn clone(&self) -> Self {
++  perf(|s| {s.clones+=1; s.witnesses_cloned+=self.witnesses().len() as u64;
++    s.tokens_cloned+=self.witnesses().iter().map(|w|w.len() as u64).sum::<u64>();});
++  Self(self.0.clone())
++ }
++}
+@@ -78 +86,4 @@
+-      if self.witnesses().iter().any(|old| old.is_subset(&witness)) {
++      let mut checks = 0_u64;
++      let absorbed = self.witnesses().iter().any(|old| { checks += 1; old.is_subset(&witness) });
++      if absorbed {
++         perf(|s| {s.insert_calls+=1; s.subset_checks+=checks; s.absorbed+=1;});
+@@ -81 +92,3 @@
+-      self.0.witnesses.0.retain(|old| !witness.is_subset(old));
++      let before = self.witnesses().len();
++      self.0.witnesses.0.retain(|old| {checks+=1; !witness.is_subset(old)});
++      let removed = before-self.witnesses().len();
+@@ -82,0 +96,2 @@
++      perf(|s| {s.insert_calls+=1; s.subset_checks+=checks; s.removed+=removed as u64;
++        s.max_family=s.max_family.max(self.witnesses().len());});
+@@ -90,5 +105,14 @@
+-      // Normalize candidates too: first insertion of a tuple can bypass join.
+-      let mut result = Self::default();
+-      for witness in self.0.__product(&other.0).witnesses.0 {
+-         result.insert(witness);
+-      }
++      let start = std::time::Instant::now();
++      let raw = self.0.__product(&other.0);
++      let build_ns=start.elapsed().as_nanos();
++      let distinct=raw.witnesses().len();
++      let start=std::time::Instant::now();
++      let mut result=Self::default();
++      for witness in raw.witnesses.0 { result.insert(witness); }
++      let minimize_ns=start.elapsed().as_nanos();
++      let mut dump=false;
++      perf(|s| {s.products+=1; s.candidate_pairs+=(self.witnesses().len()*other.witnesses().len()) as u64;
++        s.distinct_candidates+=distinct as u64; s.product_output+=result.witnesses().len() as u64;
++        s.product_build_ns+=build_ns; s.product_minimize_ns+=minimize_ns;
++        s.max_product=s.max_product.max(distinct); dump=s.products%16384==0;});
++      if dump { __perf_dump(); }
+@@ -121,4 +145,5 @@
+-      let mut changed = false;
+-      for witness in other.0.witnesses.0 {
+-         changed |= self.insert(witness);
+-      }
++      let start=std::time::Instant::now();
++      let mut changed=false;
++      for witness in other.0.witnesses.0 {changed |= self.insert(witness);}
++      let elapsed=start.elapsed().as_nanos();
++      perf(|s| {s.joins+=1; s.changed_joins+=u64::from(changed); s.join_ns+=elapsed;});
+@@ -127,0 +153,14 @@
++
++#[derive(Default, Debug)]
++struct Perf {
++ products: u64, candidate_pairs: u64, distinct_candidates: u64, product_output: u64,
++ product_build_ns: u128, product_minimize_ns: u128,
++ insert_calls: u64, subset_checks: u64, absorbed: u64, removed: u64,
++ joins: u64, changed_joins: u64, join_ns: u128,
++ clones: u64, witnesses_cloned: u64, tokens_cloned: u64,
++ max_family: usize, max_product: usize,
++}
++thread_local! { static PERF: std::cell::RefCell<Perf> = std::cell::RefCell::new(Perf::default()); }
++fn perf(f: impl FnOnce(&mut Perf)) { PERF.with(|p| f(&mut p.borrow_mut())); }
++#[doc(hidden)]
++pub fn __perf_dump() { PERF.with(|p| eprintln!("PERF {:?}", p.borrow())); }
+--- a/extensions/ascent-provenance/ascent-provenance/src/lib.rs
++++ b/extensions/ascent-provenance/ascent-provenance/src/lib.rs
+@@ -4,0 +5,3 @@
++
++#[doc(hidden)]
++pub use why_provenance::__perf_dump;
+--- a/extensions/ascent-provenance/ascent-provenance/examples/openjdk/analysis.rs
++++ b/extensions/ascent-provenance/ascent-provenance/examples/openjdk/analysis.rs
+@@ -63,0 +64 @@
++         ascent_provenance::__perf_dump();

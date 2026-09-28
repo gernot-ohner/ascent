@@ -1,5 +1,9 @@
 # OpenJDK performance report
 
+These are the original PR #9 measurements. The next stack layer changes the
+rules and product normalization; see the [optimization report](OPENJDK_INVESTIGATION.md)
+for the comparison and the remaining 17,598-fact timeout.
+
 Boolean provenance passes the real-data checks on three closed subsets, up to
 15,645 facts. It is already expensive there: 2.32 seconds against 16.8 ms for
 stock Ascent with the same explicit pairs, and 3.33 ms with compact `eqrel`.

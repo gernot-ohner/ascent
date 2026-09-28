@@ -1,0 +1,11 @@
+{
+  "source_commit": "3d4851e0d14f012405e93ca65d95ca43732a4091",
+  "binary_sha256": "99dc19d1f4ccb7c7105bed1d07d59091e39c8b985856388bd0f5036c238005e0",
+  "facts_directory": "/Users/gernotohner/dev/rust/ascent/byods/ascent-byods-rels/examples/steensgaard/openjdk_javalang_steensgaard",
+  "cap": 1200,
+  "sampling_interval_seconds": 0.25,
+  "rss_measurement": "sampled process resident size via ps; may miss peak",
+  "case_type": "check: parse, oracle, evaluation, result comparison, witness replay",
+  "timeout_phase": "Boolean evaluation did not finish; no witness replay began",
+  "cap64_bench_returncode": 0
+}

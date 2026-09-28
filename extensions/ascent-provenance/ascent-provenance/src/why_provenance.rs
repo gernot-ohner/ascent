@@ -87,10 +87,16 @@ impl<T: Ord + Hash> BooleanProvenance<T> {
 impl<T: Clone + Ord + Hash> BooleanProvenance<T> {
    #[doc(hidden)]
    pub fn __product(&self, other: &Self) -> Self {
-      // Normalize candidates too: first insertion of a tuple can bypass join.
+      // Normalize before a first insertion, which can bypass join_mut.
+      // In size order, later candidates cannot be strict subsets of survivors,
+      // so subset rejection suffices; no retained witness needs removing.
+      let mut candidates: Vec<_> = self.0.__product(&other.0).witnesses.0.into_iter().collect();
+      candidates.sort_unstable_by_key(BTreeSet::len);
       let mut result = Self::default();
-      for witness in self.0.__product(&other.0).witnesses.0 {
-         result.insert(witness);
+      for witness in candidates {
+         if !result.witnesses().iter().any(|old| old.is_subset(&witness)) {
+            result.0.witnesses.0.insert(witness);
+         }
       }
       result
    }

@@ -6,7 +6,8 @@ The macros emit ordinary lattice programs for **unmodified registry Ascent
 
 Named programs provide normalized inputs, reruns and timeouts. Inline programs
 execute once in the caller's scope, including local captures in rule bodies.
-The [review guide](REVIEW_GUIDE.md) walks through 499 lines of code across the three PRs. See also
+The [review guide](REVIEW_GUIDE.md) walks through 499 lines across the first
+three PRs, with separate guides for OpenJDK and its performance improvements. See also
 [verification](VERIFICATION.md) and [benchmarks](benchmarks/README.md).
 
 ## Repository layout
@@ -192,7 +193,8 @@ and again before the first run to account for caller assignments. Unchanged
 reruns do not normalize again.
 
 Witnesses are explicit sets. Products form pairwise combinations and may grow
-exponentially; Boolean mode still materializes products before minimizing them.
+exponentially; Boolean mode still materializes products before minimizing them, processing
+smaller candidates first to avoid inserting supersets that will later be removed.
 Evaluation is serial. The [benchmark harness](benchmarks/README.md) separates
 input scaling from increasing explanation counts and documents measured limits.
 

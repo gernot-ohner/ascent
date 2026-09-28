@@ -51,7 +51,7 @@ def main():
     subprocess.run(["cargo", "+1.85.0", "build", "--release", "--locked", "--offline", "-p", "ascent-provenance", "--example", "openjdk"], cwd=ROOT, check=True)
     target = Path(json.loads(output(["cargo", "+1.85.0", "metadata", "--no-deps", "--format-version", "1", "--offline"]))["target_directory"])
     binary = target / "release/examples/openjdk"
-    source_paths = ["ascent-provenance/examples/openjdk.rs", "ascent-provenance/examples/openjdk/analysis.rs", "ascent-provenance/examples/openjdk/facts.rs", "benchmarks/openjdk.py"]
+    source_paths = ["ascent-provenance/src/why_provenance.rs", "ascent-provenance/examples/openjdk.rs", "ascent-provenance/examples/openjdk/analysis.rs", "ascent-provenance/examples/openjdk/facts.rs", "benchmarks/openjdk.py"]
     metadata = {
         "date_utc": datetime.now(timezone.utc).isoformat(),
         "commit": output(["git", "rev-parse", "HEAD"]),

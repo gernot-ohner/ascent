@@ -1,0 +1,32 @@
+diff --git a/extensions/ascent-provenance/ascent-provenance/examples/openjdk/analysis.rs b/extensions/ascent-provenance/ascent-provenance/examples/openjdk/analysis.rs
+index 54a8d08..d7fe3a5 100644
+--- a/extensions/ascent-provenance/ascent-provenance/examples/openjdk/analysis.rs
++++ b/extensions/ascent-provenance/ascent-provenance/examples/openjdk/analysis.rs
+@@ -27,0 +28 @@ ascent! {
++   relation edge(Id,Id);
+@@ -29,5 +30,6 @@ ascent! {
+-   vpt(x,y) <-- alloc(x,y);
+-   vpt(x,y) <-- assign(x,y);
+-   vpt(y,p) <-- store(x,f,y), load(p,f,q), vpt(x,q);
+-   vpt(y,x), vpt(x,x) <-- vpt(x,y);
+-   vpt(x,z) <-- vpt(x,y), vpt(y,z);
++   edge(x,y) <-- alloc(x,y);
++   edge(x,y) <-- assign(x,y);
++   edge(y,p) <-- store(x,f,y), load(p,f,q), vpt(x,q);
++   edge(y,x) <-- edge(x,y);
++   vpt(x,y), vpt(x,x) <-- edge(x,y);
++   vpt(x,z) <-- vpt(x,y), edge(y,z);
+@@ -41,0 +44 @@ provenance! {
++   #[provenance(usize)] relation edge(Id,Id);
+@@ -43,5 +46,6 @@ provenance! {
+-   vpt(x,y) <-- alloc(x,y);
+-   vpt(x,y) <-- assign(x,y);
+-   vpt(y,p) <-- store(x,f,y), load(p,f,q), vpt(x,q);
+-   vpt(y,x), vpt(x,x) <-- vpt(x,y);
+-   vpt(x,z) <-- vpt(x,y), vpt(y,z);
++   edge(x,y) <-- alloc(x,y);
++   edge(x,y) <-- assign(x,y);
++   edge(y,p) <-- store(x,f,y), load(p,f,q), vpt(x,q);
++   edge(y,x) <-- edge(x,y);
++   vpt(x,y), vpt(x,x) <-- edge(x,y);
++   vpt(x,z) <-- vpt(x,y), edge(y,z);
