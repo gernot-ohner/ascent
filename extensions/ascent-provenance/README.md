@@ -7,7 +7,7 @@ The macros emit ordinary lattice programs for **unmodified registry Ascent
 Named programs provide normalized inputs, reruns and timeouts. Inline programs
 execute once in the caller's scope, including local captures in rule bodies.
 The [macro review guide](reviews/02-macros.md) covers this layer.
-The [overall stack guide](https://github.com/gernot-ohner/ascent/blob/codex/provenance-validation/extensions/ascent-provenance/REVIEW_GUIDE.md)
+The [overall stack guide](https://github.com/gernot-ohner/ascent/blob/feature/provenance-validation/extensions/ascent-provenance/REVIEW_GUIDE.md)
 covers all three PRs. The final PR adds the ProvSQL comparison and benchmarks.
 
 ## Repository layout
