@@ -1,0 +1,40 @@
+name: External provenance
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'extensions/ascent-provenance/**'
+      - '.github/workflows/external-provenance.yml'
+  push:
+    paths:
+      - 'extensions/ascent-provenance/**'
+      - '.github/workflows/external-provenance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extensions/ascent-provenance
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust 1.85.0
+        run: rustup toolchain install 1.85.0 --profile minimal
+      - name: Fetch locked dependencies
+        run: |
+          cargo +1.85.0 fetch --locked
+          cargo +1.85.0 fetch --locked --manifest-path tests/consumer/Cargo.toml
+      - name: Test the external workspace
+        run: cargo +1.85.0 test --workspace --locked --offline
+      - name: Check downstream compatibility and diagnostics
+        run: |
+          python3 tests/inline_capture.py
+          python3 tests/compile_fail.py
+          cargo +1.85.0 run --manifest-path tests/consumer/Cargo.toml --features parallel-stock --locked --offline
+          python3 tests/relocated_consumer.py
+      - name: Build documentation
+        run: cargo +1.85.0 doc --workspace --no-deps --locked --offline
