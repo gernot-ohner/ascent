@@ -1,20 +1,20 @@
 # External provenance: review the stack
 
-This stack splits [PR #4](https://github.com/gernot-ohner/ascent/pull/4) into
-three buildable layers. PR #4 remains open and unchanged. The top of this stack
+This stack splits [PR #11](https://github.com/gernot-ohner/ascent/pull/11) into
+three buildable layers. PR #11 remains open and unchanged. The top of this stack
 contains the same runtime, macros, tests, examples and recorded benchmark data.
 The split changes documentation, commit boundaries and CI branch filters.
 
 | Order | PR | Base | Review guide |
 | --- | --- | --- | --- |
-| 1 | [Provenance values](https://github.com/gernot-ohner/ascent/pull/5) | `master` | [Values](reviews/01-values.md) |
-| 2 | [External macros](https://github.com/gernot-ohner/ascent/pull/6) | `codex/provenance-values` | [Macros](reviews/02-macros.md) |
-| 3 | [Validation and benchmarks](https://github.com/gernot-ohner/ascent/pull/7) | `codex/provenance-macros` | [Validation](reviews/03-validation.md) |
+| 1 | [Provenance values](https://github.com/gernot-ohner/ascent/pull/12) | `master` | [Values](reviews/01-values.md) |
+| 2 | [External macros](https://github.com/gernot-ohner/ascent/pull/13) | `feature/provenance-values` | [Macros](reviews/02-macros.md) |
+| 3 | [Validation and benchmarks](https://github.com/gernot-ohner/ascent/pull/14) | `feature/provenance-macros` | [Validation](reviews/03-validation.md) |
 
 Review each PR against its listed base. The second diff contains only what it
 adds to the first; the third contains only what it adds to the second. Each tip
 has its own passing checks. If both review routes remain open, merge either
-this stack or PR #4, not both.
+this stack or PR #11, not both.
 
 The macros add a witness column to tracked relations and emit ordinary lattice
 rules. Registry Ascent 0.8.1 supplies the storage, indexes and evaluator. Why
@@ -30,12 +30,12 @@ links point to each layer's branch.
 
 | Layer | Code | Lines | Look for |
 | --- | --- | ---: | --- |
-| Values | [why_provenance.rs:1-127](https://github.com/gernot-ohner/ascent/blob/codex/provenance-values/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs#L1-L127) | 127 | Alternatives, products and absorption. |
-| Values | [why_provenance_absorption.rs:1-65](https://github.com/gernot-ohner/ascent/blob/codex/provenance-values/extensions/ascent-provenance/ascent-provenance/tests/why_provenance_absorption.rs#L1-L65) | 65 | Independent Boolean truth tables. |
-| Macros | [lower.rs:13-155](https://github.com/gernot-ohner/ascent/blob/codex/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L13-L155) and [173-184](https://github.com/gernot-ohner/ascent/blob/codex/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L173-L184) | 155 | Products of premise annotations become head annotations. |
-| Macros | [normalize.rs:5-32](https://github.com/gernot-ohner/ascent/blob/codex/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/normalize.rs#L5-L32) | 28 | Duplicate keys join before indexing; zero rows disappear. |
-| Macros | [wrapper.rs:103-180](https://github.com/gernot-ohner/ascent/blob/codex/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/wrapper.rs#L103-L180) | 78 | Stock execution, named reruns and one-shot inline results. |
-| Validation | [compare.py:206-251](https://github.com/gernot-ohner/ascent/blob/codex/provenance-validation/extensions/ascent-provenance/ascent-provenance/examples/provsql/compare.py#L206-L251) | 46 | ProvSQL evaluation and extraction of minimal true sets. |
+| Values | [why_provenance.rs:1-127](https://github.com/gernot-ohner/ascent/blob/feature/provenance-values/extensions/ascent-provenance/ascent-provenance/src/why_provenance.rs#L1-L127) | 127 | Alternatives, products and absorption. |
+| Values | [why_provenance_absorption.rs:1-65](https://github.com/gernot-ohner/ascent/blob/feature/provenance-values/extensions/ascent-provenance/ascent-provenance/tests/why_provenance_absorption.rs#L1-L65) | 65 | Independent Boolean truth tables. |
+| Macros | [lower.rs:13-155](https://github.com/gernot-ohner/ascent/blob/feature/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L13-L155) and [173-184](https://github.com/gernot-ohner/ascent/blob/feature/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/lower.rs#L173-L184) | 155 | Products of premise annotations become head annotations. |
+| Macros | [normalize.rs:5-32](https://github.com/gernot-ohner/ascent/blob/feature/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/normalize.rs#L5-L32) | 28 | Duplicate keys join before indexing; zero rows disappear. |
+| Macros | [wrapper.rs:103-180](https://github.com/gernot-ohner/ascent/blob/feature/provenance-macros/extensions/ascent-provenance/ascent-provenance-macros/src/wrapper.rs#L103-L180) | 78 | Stock execution, named reruns and one-shot inline results. |
+| Validation | [compare.py:206-251](https://github.com/gernot-ohner/ascent/blob/feature/provenance-validation/extensions/ascent-provenance/ascent-provenance/examples/provsql/compare.py#L206-L251) | 46 | ProvSQL evaluation and extraction of minimal true sets. |
 | | **Total** | **499** | |
 
 Why's meet intersects alternatives; it differs from the rule-body product.
