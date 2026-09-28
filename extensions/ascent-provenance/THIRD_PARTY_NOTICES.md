@@ -21,6 +21,8 @@ Transferred from the provenance experiment at commit
 - `lower.rs`: transferred `ascent_macro/src/why_provenance.rs`, with
   public external runtime paths, local logical-arity lookup, and private
   annotation metadata instead of HIR membership.
-- The provenance tests and diamond example were transferred from `ascent/tests`
-  and `ascent/examples` at the same commit. Changes concern imports, macro entry
-  points and output ownership; expected witnesses are preserved.
+- The five `tests/why_provenance*.rs` files and diamond, shortest-path and
+  ProvSQL examples/harness are transferred from `ascent/tests` and
+  `ascent/examples` at the same commit. Changes concern imports, macro entry
+  points, output ownership and the Cargo package argument, not expected results
+  or oracle semantics. The historical absorption test filename is retained.

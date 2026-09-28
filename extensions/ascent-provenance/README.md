@@ -6,9 +6,8 @@ The macros emit ordinary lattice programs for **unmodified registry Ascent
 
 Named programs provide normalized inputs, reruns and timeouts. Inline programs
 execute once in the caller's scope, including local captures in rule bodies.
-The [macro review guide](reviews/02-macros.md) covers this layer.
-The [overall stack guide](https://github.com/gernot-ohner/ascent/blob/feature/provenance-validation/extensions/ascent-provenance/REVIEW_GUIDE.md)
-covers all three PRs. The final PR adds the ProvSQL comparison and benchmarks.
+The [review guide](REVIEW_GUIDE.md) walks through 499 lines of code across the three PRs. See also
+[verification](VERIFICATION.md) and [benchmarks](benchmarks/README.md).
 
 ## Repository layout
 
@@ -194,8 +193,8 @@ reruns do not normalize again.
 
 Witnesses are explicit sets. Products form pairwise combinations and may grow
 exponentially; Boolean mode still materializes products before minimizing them.
-Evaluation is serial. The next PR adds a benchmark harness that separates
-input scaling from increasing explanation counts.
+Evaluation is serial. The [benchmark harness](benchmarks/README.md) separates
+input scaling from increasing explanation counts and documents measured limits.
 
 ## Language and version coupling
 
@@ -216,21 +215,25 @@ provenance or new general semiring framework is provided.
 
 ## Examples and verification
 
-Run from this directory:
-
 ```sh
-cargo +1.85.0 run -p ascent-provenance --example why_provenance --locked
+cargo +1.85.0 run -p ascent-provenance --example why_provenance
+cargo +1.85.0 run -p ascent-provenance --example why_provenance_shortest_path
 cargo +1.85.0 test --workspace --locked
-python3 tests/inline_capture.py
-python3 tests/compile_fail.py
+cargo +1.85.0 run --manifest-path tests/consumer/Cargo.toml --locked
 cargo +1.85.0 run --manifest-path tests/consumer/Cargo.toml --features parallel-stock --locked
-python3 tests/relocated_consumer.py
-cargo +1.85.0 doc --workspace --no-deps --locked
+python3 tests/compile_fail.py
+python3 ascent-provenance/examples/provsql/compare.py
 ```
 
-The workspace has 58 tests, including the five value and stock-Ascent tests from the first PR.
-They cover input normalization, unchanged reruns, local captures, `Self` paths,
-source inclusion, custom ordinary storage and bounded recursive reachability.
-The downstream checks test the public API in independent Cargo projects.
+The shortest-path demo first computes final distances using stock lattices,
+then explains routes following tight edges. Boolean mode preserves minimal tied
+witnesses and absorbs redundant zero-cost cycle detours. These witnesses explain
+attainment of fixed distances, not the absence of a shorter route.
 
-See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for source attribution.
+The [ProvSQL harness](ascent-provenance/examples/provsql/README.md) uses the
+pinned independent oracle, complete relation comparisons, complete Boolean
+valuations and deliberately wrong-witness controls.
+
+See [VERIFICATION.md](VERIFICATION.md) for executed evidence and outstanding
+compatibility work, and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for
+source attribution and the MIT notice.
