@@ -111,9 +111,3 @@ The cost lies in computing and storing explanations, including intermediate
 candidates that are later discarded. The timeout does not tell us how much work
 the final witness count would require. The tested subsets include only 15 of
 509 stores; they do not establish full-input scalability.
-
-## Questions for review
-
-- Does annotation propagation have a counterexample within the supported scope?
-- Is the copied frontend worth maintaining?
-- Which parts could support a shared expression backend, especially with recursion?
